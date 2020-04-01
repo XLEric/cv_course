@@ -1,7 +1,7 @@
 # cv_course
-## 课程介绍
+## 课程介绍(Course Abstract)
 
-## 课程安排
+## 课程安排（Course Schedule）
 | 章节 | 内容 |
 |--|--|
 | 第一章 | ~ |
@@ -16,19 +16,18 @@
 | 第十章 | ~ |
 
 
-## Requirements（软件安装）  
+## 软件安装需求（Requirements）
 
 * Python 3.6  
 * PyTorch 1.1
 * torchvision 0.3.0
 * OpenCV 3.4.0  
 
-## Third-Party Resources（第三方资源）  
+## 第三方资源（Third-Party Resources）  
 * http://www.vision.caltech.edu/visipedia/CUB-200-2011.html
 
 
-## Notice  
-* I hope that'll be helpful for you.
 
-## Contact（联系方式）  
+## 联系方式 （Contact）
 * E-mails: 305141918@qq.com
+* I hope that'll be helpful for you.
