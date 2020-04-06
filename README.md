@@ -24,7 +24,7 @@
 * OpenCV 3.4.0  
 
 ## 第三方资源（Third-Party Resources）  
-* http://www.vision.caltech.edu/visipedia/CUB-200-2011.html
+* http://www.vision.caltech.edu/visipedia/CUB-200-2011.html  
   Wah C., Branson S., Welinder P., Perona P., Belongie S. “The Caltech-UCSD Birds-200-2011 Dataset.” Computation & Neural Systems Technical Report, CNS-TR-2011-001  
 
 
