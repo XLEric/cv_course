@@ -25,9 +25,11 @@
 
 ## 第三方资源（Third-Party Resources）  
 * http://www.vision.caltech.edu/visipedia/CUB-200-2011.html
+  Wah C., Branson S., Welinder P., Perona P., Belongie S. “The Caltech-UCSD Birds-200-2011 Dataset.” Computation & Neural Systems Technical Report, CNS-TR-2011-001  
 
 
 
-## 联系方式 （Contact）
-* E-mails: 305141918@qq.com
-* I hope that'll be helpful for you.
+## 联系方式 （Contact）  
+* E-mails: 305141918@qq.com  
+
+## I hope that'll be helpful for you.  
