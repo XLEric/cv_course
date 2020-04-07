@@ -7,6 +7,7 @@ import argparse
 import torch
 import torch.nn as nn
 import torch.optim as optim
+import torch.backends.cudnn as cudnn
 # from tensorboardX import SummaryWriter
 
 from data_iter.datasets import *
@@ -30,14 +31,24 @@ def set_learning_rate(optimizer, lr):
     for param_group in optimizer.param_groups:
         param_group['lr'] = lr
 
-def trainer():
-    np.random.seed(666)
-    seed = torch.manual_seed(666)
+def init_seed(seed = 666):
+    np.random.seed(seed)
+    random.seed(seed)
+    torch.manual_seed(seed)
     if torch.cuda.is_available():
-        torch.cuda.manual_seed_all(666)
+        torch.cuda.manual_seed(seed)
+        torch.cuda.manual_seed_all(seed)
+        cudnn.deterministic = True
+        # cudnn.benchmark = False
+        # cudnn.enabled = False
+
+def trainer():
+    pass
 
 if __name__ == "__main__":
     os.environ['CUDA_VISIBLE_DEVICES'] = "7"
+    init_seed()
+
     save_model_dir= './model_s_dir/'
     model_dir = save_model_dir
     if not os.path.exists(save_model_dir):
@@ -73,7 +84,7 @@ if __name__ == "__main__":
 
     batch_size = 64
     start_epoch = 0
-    epochs = 100
+    epochs = 1000
     num_workers = 6
     img_size = (224,224)
     lr_decay_step = 1
@@ -157,7 +168,7 @@ if __name__ == "__main__":
             loss_idx += 1.
             if i%10 == 0:
                 acc = get_acc(output, labels_)
-                print('       %s - epoch %s (%s/%s): '%(model_name,epoch,i,int(dataset.__len__()/batch_size)),' loss : %.6f - %.6f'%(loss_mean/loss_idx,loss.item()),' acc : %.4f'%acc,' lr : %.5f'%init_lr,' bs : ',batch_size,\
+                print('       %s - epoch [%s/%s] (%s/%s): '%(model_name,epoch,epochs,i,int(dataset.__len__()/batch_size)),' loss : %.6f - %.6f'%(loss_mean/loss_idx,loss.item()),' acc : %.4f'%acc,' lr : %.5f'%init_lr,' bs : ',batch_size,\
                 ' img_size : %s x %s'%(img_size[0],img_size[1]),' best_loss : %.4f'%best_loss)
                 # time.sleep(1)
                 # writer.add_scalar('data/loss', loss, step)
