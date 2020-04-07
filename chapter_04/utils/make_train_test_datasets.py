@@ -15,6 +15,20 @@ def mkdir_(path, flag_rm=False):
     else:
         os.mkdir(path)
 
+def plot_box(bbox, img, color=None, label=None, line_thickness=None):
+    tl = line_thickness or round(0.002 * max(img.shape[0:2])) + 1
+    color = color or [random.randint(0, 255) for _ in range(3)]
+    c1, c2 = (int(bbox[0]), int(bbox[1])), (int(bbox[2]), int(bbox[3]))
+    cv2.rectangle(img, c1, c2, color, thickness=tl)# 目标的bbox
+    if label:
+        tf = max(tl - 2, 1)
+        t_size = cv2.getTextSize(label, 0, fontScale=tl / 3, thickness=tf)[0] # label size
+        c2 = c1[0] + t_size[0], c1[1] - t_size[1] - 3 # 字体的bbox
+        cv2.rectangle(img, c1, c2, color, -1)  # label 矩形填充
+        # 文本绘制
+        cv2.putText(img, label, (c1[0], c1[1] - 2), 0, tl / 4, [225, 255, 255],\
+        thickness=tf, lineType=cv2.LINE_AA)
+
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description='')
@@ -24,19 +38,26 @@ if __name__ == "__main__":
         help = 'images_list')# 添加图片信息文本路径
     parser.add_argument('--train_test_split', type=str, default = './datasets/CUB_200_2011/train_test_split.txt',
         help = 'train_test_split')# 添加训练集和测试集分割信息文本路径
+    parser.add_argument('--bbox_msg', type=str, default = './datasets/CUB_200_2011/bounding_boxes.txt',
+        help = 'bounding_boxes')# 添加图片边界框信息文件路径
     parser.add_argument('--train_datasets', type=str, default = './datasets/train_datasets/',
         help = 'train_datasets')# 添加训练集文件夹路径
     parser.add_argument('--test_datasets', type=str, default = './datasets/test_datasets/',
         help = 'test_datasets')# 添加测试集文件夹路径
+    parser.add_argument('--make_cropdata', type=bool, default = True,
+        help = 'make_bbox_datastes')# 添加是否crop之后的训练集
     parser.add_argument('--vis', type=bool, default = False,
         help = 'visualization')# 添加可视化标志位
+
 
     args = parser.parse_args()# 解析添加参数
     print(args.images_path)
     print(args.images_list)
     print(args.train_test_split)
+    print(args.bbox_msg)
     print(args.train_datasets)
     print(args.test_datasets)
+    print(args.make_cropdata)
     print(args.vis)
 
     mkdir_(args.train_datasets,flag_rm = True)# 创建训练集文件夹
@@ -46,14 +67,18 @@ if __name__ == "__main__":
     print(len(imgs_list))
     train_test_split_list = open(args.train_test_split,'r',encoding = 'utf-8').readlines()# 训练和测试集分割列表
     print(len(train_test_split_list))
+    bbox_msg_list = open(args.bbox_msg,'r',encoding = 'utf-8').readlines()# 训练和测试集分割列表
+    print(len(train_test_split_list))
 
     train_cnt = 0
     test_cnt = 0
     for i in range(len(imgs_list)):
         image_id,image_name = imgs_list[i].strip('\n').split(' ')# 获取信息 ：图片id 、图片相对路径
         doc_class = image_name.split('/')[0]# 每一类文件夹
-        image_id,is_train = train_test_split_list[i].strip('\n').split(' ')# 获取信息 ：图片id 、是否是训练图片标志位
+        _,is_train = train_test_split_list[i].strip('\n').split(' ')# 获取信息 ：图片id 、是否是训练图片标志位
         is_train = int(is_train)
+        _,x,y,w,h = bbox_msg_list[i].strip('\n').split(' ')# 获取信息 ：图片id 、边界框
+        x1,y1,x2,y2 = int(float(x)),int(float(y)),int(float(x) + float(w)),int(float(y) + float(h))
         print('[{}/{}] {} : is_train {} '.format(image_id,len(imgs_list),image_name,is_train))
 
         if is_train:# 训练集
@@ -64,10 +89,18 @@ if __name__ == "__main__":
             test_cnt += 1
 
         mkdir_(path_s + doc_class)# 创建训练测试集的分类目录
-        shutil.copyfile(args.images_path + image_name,path_s +image_name )# 将原图片路径拷贝到相应的训练集和测试集类别文件夹
+
+        if args.make_cropdata:# 是否制作 crop 数据集
+            img = cv2.imread(args.images_path + image_name)
+            cv2.imwrite(path_s +image_name,img[y1:y2,x1:x2,:])
+        else:# 制作原图数据集
+            shutil.copyfile(args.images_path + image_name,path_s +image_name )# 将原图片路径拷贝到相应的训练集和测试集类别文件夹
 
         if args.vis:
             img = cv2.imread(args.images_path + image_name)# 读取图片可视化
+
+            bbox = x1,y1,x2,y2
+            plot_box(bbox, img, color=(255,0,0), label='bird')
 
             cv2.namedWindow('img',0)#窗口大小可改变
             cv2.imshow('img',img)#显示旋转图片
@@ -75,5 +108,5 @@ if __name__ == "__main__":
 
     print('train datasets len : {}'.format(train_cnt))
     print('test datasets len : {}'.format(test_cnt))
-
-    cv2.destroyAllWindows()
+    if args.vis:
+        cv2.destroyAllWindows()
