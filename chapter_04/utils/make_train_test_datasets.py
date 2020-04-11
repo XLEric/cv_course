@@ -5,29 +5,8 @@ import os
 import cv2 # 加载OpenCV库
 import argparse # 加载处理命令行参数库
 import shutil
-
-def mkdir_(path, flag_rm=False):
-    if os.path.exists(path):
-        if flag_rm == True:
-            shutil.rmtree(path)
-            os.mkdir(path)
-            print('remove {} done ~ '.format(path))
-    else:
-        os.mkdir(path)
-
-def plot_box(bbox, img, color=None, label=None, line_thickness=None):
-    tl = line_thickness or round(0.002 * max(img.shape[0:2])) + 1
-    color = color or [random.randint(0, 255) for _ in range(3)]
-    c1, c2 = (int(bbox[0]), int(bbox[1])), (int(bbox[2]), int(bbox[3]))
-    cv2.rectangle(img, c1, c2, color, thickness=tl)# 目标的bbox
-    if label:
-        tf = max(tl - 2, 1)
-        t_size = cv2.getTextSize(label, 0, fontScale=tl / 3, thickness=tf)[0] # label size
-        c2 = c1[0] + t_size[0], c1[1] - t_size[1] - 3 # 字体的bbox
-        cv2.rectangle(img, c1, c2, color, -1)  # label 矩形填充
-        # 文本绘制
-        cv2.putText(img, label, (c1[0], c1[1] - 2), 0, tl / 4, [225, 255, 255],\
-        thickness=tf, lineType=cv2.LINE_AA)
+import json
+from utils.common_utils import *
 
 if __name__ == "__main__":
 
@@ -49,17 +28,21 @@ if __name__ == "__main__":
     parser.add_argument('--vis', type=bool, default = False,
         help = 'visualization')# 添加可视化标志位
 
-
     args = parser.parse_args()# 解析添加参数
-    print(args.images_path)
-    print(args.images_list)
-    print(args.train_test_split)
-    print(args.bbox_msg)
-    print(args.train_datasets)
-    print(args.test_datasets)
-    print(args.make_cropdata)
-    print(args.vis)
+    print('----------------------------------')
 
+
+    unparsed = vars(args) # parse_args()方法的返回值为namespace，用vars()内建函数化为字典
+    for key in unparsed.keys():
+        print('{} : {}'.format(key,unparsed[key]))
+
+    unparsed['m'] = 999
+    fs = open('./make_data_train_test_msg.tr_param',"w",encoding='utf-8')
+    json.dump(unparsed,fs,ensure_ascii=False,indent = 1)
+    fs.close()
+
+    while 1 :
+        pass
     mkdir_(args.train_datasets,flag_rm = True)# 创建训练集文件夹
     mkdir_(args.test_datasets,flag_rm = True)# 创建测试集文件夹
 

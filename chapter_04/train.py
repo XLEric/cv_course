@@ -1,5 +1,5 @@
 #-*-coding:utf-8-*-
-# date:2020-01-28
+# date:2020-04-11
 # Author: xiang li
 
 import os
@@ -7,186 +7,208 @@ import argparse
 import torch
 import torch.nn as nn
 import torch.optim as optim
-import torch.backends.cudnn as cudnn
-# from tensorboardX import SummaryWriter
+import  sys
 
+# from tensorboardX import SummaryWriter
+from utils.model_utils import *
+from utils.common_utils import *
 from data_iter.datasets import *
 from loss.loss import LabelSmoothing,FocalLoss
 from models.resnet import resnet18, resnet34, resnet50, resnet101, resnet152
 
 import cv2
-import numpy as np
-
-import random
 import time
+import json
 from datetime import datetime
 
-def get_acc(output, label):
-    total = output.shape[0]
-    _, pred_label = output.max(1)
-    num_correct = (pred_label == label).sum().item()
-    return num_correct / float(total)
+def trainer(ops):
+    try:
+        set_seed(ops.seed)
+        os.environ['CUDA_VISIBLE_DEVICES'] = ops.GPUS
 
-def set_learning_rate(optimizer, lr):
-    for param_group in optimizer.param_groups:
-        param_group['lr'] = lr
+        train_path =  './datasets/train_datasets/'
+        num_classes = len(os.listdir(ops.train_path)) # 模型类别个数
+        print('num_classes : ',num_classes)
+        #---------------------------------------------------------------- 构建模型
+        print('use model : %s'%(ops.model))
 
-def init_seed(seed = 666):
-    np.random.seed(seed)
-    random.seed(seed)
-    torch.manual_seed(seed)
-    if torch.cuda.is_available():
-        torch.cuda.manual_seed(seed)
-        torch.cuda.manual_seed_all(seed)
-        cudnn.deterministic = True
-        # cudnn.benchmark = False
-        # cudnn.enabled = False
+        if ops.model == 'resnet_18':
+            model_=resnet50(pretrained = ops.pretrained)
+        elif ops.model == 'resnet_34':
+            model_=resnet50(pretrained = ops.pretrained)
+        elif ops.model == 'resnet_50':
+            model_=resnet50(pretrained = ops.pretrained)
+        elif ops.model == 'resnet_101':
+            model_=resnet50(pretrained = ops.pretrained)
+        elif ops.model == 'resnet_152':
+            model_=resnet50(pretrained = ops.pretrained)
+        else:
+            print('error no the struct model : {}'.format(ops.model))
 
-def trainer():
-    pass
+        num_ftrs = model_.fc.in_features
+        model_.fc = nn.Linear(num_ftrs, num_classes)
+
+        use_cuda = torch.cuda.is_available()
+
+        device = torch.device("cuda:0" if use_cuda else "cpu")
+        model_ = model_.to(device)
+
+        print(model_)# 打印模型结构
+
+        # Dataset
+        dataset = LoadImagesAndLabels(path = ops.train_path,img_size=ops.img_size,flag_agu=ops.flag_agu,fix_res = ops.fix_res)
+        print('len train datasets : %s'%(dataset.__len__()))
+        # Dataloader
+        dataloader = DataLoader(dataset,
+                                batch_size=ops.batch_size,
+                                num_workers=ops.num_workers,
+                                shuffle=True,
+                                pin_memory=False,
+                                drop_last = True)
+        # 优化器设计
+        # optimizer_Adam = torch.optim.Adam(model_.parameters(), lr=init_lr, betas=(0.9, 0.99),weight_decay=1e-6)
+        optimizer_SGD = optim.SGD(model_.parameters(), lr=ops.init_lr, momentum=0.9, weight_decay=ops.weight_decay)# 优化器初始化
+        optimizer = optimizer_SGD
+        # 加载 finetune 模型
+        if os.access(ops.fintune_model,os.F_OK):# checkpoint
+            chkpt = torch.load(ops.fintune_model, map_location=device)
+            model_.load_state_dict(chkpt)
+            print('load fintune model : {}'.format(ops.fintune_model))
+
+        print('/**********************************************/')
+        # 损失函数
+        if 'focalLoss' == ops.loss_define:
+            criterion = FocalLoss(num_class = num_classes)
+        else:
+            criterion = nn.CrossEntropyLoss()#CrossEntropyLoss() 是 softmax 和 负对数损失的结合
+
+        step = 0
+        idx = 0
+
+        # 变量初始化
+        best_loss = np.inf
+        loss_mean = 0. # 损失均值
+        loss_idx = 0. # 损失计算计数器
+        flag_change_lr_cnt = 0 # 学习率更新计数器
+        init_lr = ops.init_lr # 学习率
+
+        for epoch in range(0, ops.epochs):
+            print('\nepoch %d ------>>>'%epoch)
+            model_.train()
+            # 学习率更新策略
+            if loss_mean!=0.:
+                if best_loss > (loss_mean/loss_idx):
+                    flag_change_lr_cnt = 0
+                    best_loss = (loss_mean/loss_idx)
+                else:
+                    flag_change_lr_cnt += 1
+
+                    if flag_change_lr_cnt >=2:
+                        init_lr = init_lr*ops.lr_decay
+                        set_learning_rate(optimizer, init_lr)
+                        flag_change_lr_cnt = 0
+
+            for i, (imgs_, labels_) in enumerate(dataloader):
+
+                if use_cuda:
+                    imgs_ = imgs_.cuda()  # pytorch 的 数据输入格式 ： (batch, channel, height, width)
+                    labels_ = labels_.cuda()
+
+                output = model_(imgs_.float())
+
+                loss = criterion(output, labels_)
+                loss_mean += loss.item()
+                loss_idx += 1.
+                if i%10 == 0:
+                    acc = get_acc(output, labels_)
+                    loc_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+                    print('   %s - %s - epoch [%s/%s] (%s/%s): '%(loc_time,ops.model,epoch,ops.epochs,i,int(dataset.__len__()/ops.batch_size)),\
+                    ' loss : %.6f - %.6f'%(loss_mean/loss_idx,loss.item()),\
+                    ' acc : %.4f'%acc,' lr : %.5f'%init_lr,' bs : ',ops.batch_size,\
+                    ' img_size : %s x %s'%(ops.img_size[0],ops.img_size[1]),' best_loss : %.4f'%best_loss)
+                    # time.sleep(1)
+                    # writer.add_scalar('data/loss', loss, step)
+                    # writer.add_scalars('data/scalar_group', {'acc':acc,'lr':init_lr,'baseline':0.}, step)
+
+                # 计算梯度
+                loss.backward()
+                # 优化器对模型参数更新
+                optimizer.step()
+                # 优化器梯度清零
+                optimizer.zero_grad()
+                step += 1
+
+                # 一个 epoch 保存连词最新的 模型
+                if i%(int(dataset.__len__()/ops.batch_size/2-1)) == 0 and i > 0:
+                    torch.save(model_.state_dict(), ops.model_exp + 'latest.pth')
+            # 每一个 epoch 进行模型保存
+            torch.save(model_.state_dict(), ops.model_exp + 'model_epoch-{}.pth'.format(epoch))
+    except Exception as e:
+        print('Exception : ',e) # 打印异常
+        print('Exception  file : ', e.__traceback__.tb_frame.f_globals['__file__'])# 发生异常所在的文件
+        print('Exception  line : ', e.__traceback__.tb_lineno)# 发生异常所在的行数
 
 if __name__ == "__main__":
-    os.environ['CUDA_VISIBLE_DEVICES'] = "7"
-    init_seed()
 
-    save_model_dir= './model_s_dir/'
-    model_dir = save_model_dir
-    if not os.path.exists(save_model_dir):
-        os.mkdir(save_model_dir)
+    parser = argparse.ArgumentParser(description=' Project Classification')
+    parser.add_argument('--seed', type=int, default = 999,
+        help = 'seed') # 设置随机种子
+    parser.add_argument('--model_exp', type=str, default = './model_exp',
+        help = 'model_exp') # 模型输出文件夹
+    parser.add_argument('--model', type=str, default = 'resnet_50',
+        help = 'model') # 模型类型
+    parser.add_argument('--GPUS', type=str, default = '0',
+        help = 'GPUS') # GPU选择
+    parser.add_argument('--train_path', type=str, default = './datasets/train_datasets/',
+        help = 'train_path') # 训练集路径
+    parser.add_argument('--pretrained', type=bool, default = True,
+        help = 'imageNet_Pretrain') # 初始化学习率
+    parser.add_argument('--fintune_model', type=str, default = 'None',
+        help = 'fintune_model') # fintune model
+    parser.add_argument('--loss_define', type=str, default = True,
+        help = 'define_loss') # 损失函数定义
+    parser.add_argument('--init_lr', type=float, default = 1e-3,
+        help = 'init_learningRate') # 初始化学习率
+    parser.add_argument('--lr_decay', type=float, default = 0.9,
+        help = 'learningRate_decay') # 学习率权重衰减率
+    parser.add_argument('--weight_decay', type=float, default = 1e-8,
+        help = 'weight_decay') # 优化器正则损失权重
+    parser.add_argument('--batch_size', type=int, default = 64,
+        help = 'batch_size') # 训练每批次图像数量
+    parser.add_argument('--epochs', type=int, default = 1000,
+        help = 'epochs') # 训练周期
+    parser.add_argument('--num_workers', type=int, default = 6,
+        help = 'num_workers') # 训练数据生成器线程数
+    parser.add_argument('--img_size', type=tuple , default = (224,224),
+        help = 'img_size') # 输入模型图片尺寸
+    parser.add_argument('--flag_agu', type=bool , default = True,
+        help = 'data_augmentation') # 训练数据生成器是否进行数据扩增
+    parser.add_argument('--fix_res', type=bool , default = True,
+        help = 'fix_resolution') # 输入模型样本图片是否保证图像分辨率的长宽比
+    parser.add_argument('--clear_model_exp', type=bool, default = True,
+        help = 'clear_model_exp') # 模型输出文件夹是否进行清除
 
+    print('\n/******************* {} ******************/\n'.format(parser.description))
+    #--------------------------------------------------------------------------
+    args = parser.parse_args()# 解析添加参数
+    #--------------------------------------------------------------------------
+    mkdir_(args.model_exp, flag_rm=args.clear_model_exp)
+    loc_time = time.localtime()
+    args.model_exp = args.model_exp + '/' + time.strftime("%Y-%m-%d_%H-%M-%S", loc_time)+'/'
+    mkdir_(args.model_exp, flag_rm=args.clear_model_exp)
 
-    train_path =  './datasets/train_datasets/'
-    print('datasets label : %s'%(os.listdir(train_path)))
-    output_node = len(os.listdir(train_path))
-    print('output_node : %s'%(output_node))
-    model_name = "resnet50"
-    print('use model : %s'%(model_name))
-    # Number of classes in the dataset
-    num_classes = output_node # 模型类别个数
+    print('----------------------------------')
 
-    feature_extract = False
+    unparsed = vars(args) # parse_args()方法的返回值为namespace，用vars()内建函数化为字典
+    for key in unparsed.keys():
+        print('{} : {}'.format(key,unparsed[key]))
 
-    name='resnet50'
-    model_=resnet50(pretrained = False,num_classes=num_classes)
-    num_ftrs = model_.fc.in_features
-    model_.fc = nn.Linear(num_ftrs, num_classes)
+    unparsed['time'] = time.strftime("%Y-%m-%d %H:%M:%S", loc_time)
 
-    print('num_ftrs : ',num_ftrs,' num_classes : ',num_classes)
+    fs = open(args.model_exp+'train_ops.json',"w",encoding='utf-8')
+    json.dump(unparsed,fs,ensure_ascii=False,indent = 1)
+    fs.close()
 
-    # writer = SummaryWriter(logdir='./logs_train', comment=model_name)
+    trainer(ops = args)# 模型训练
 
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    model_ = model_.to(device)
-
-    print(model_)
-
-    init_lr = 1e-3
-
-    batch_size = 64
-    start_epoch = 0
-    epochs = 1000
-    num_workers = 6
-    img_size = (224,224)
-    lr_decay_step = 1
-    flag_agu = True
-    fix_res = True
-    backward_decay_step = 1
-    print('image size    :',img_size)
-    print('batch_size    : ',batch_size)
-    print('num_workers   : ',num_workers)
-    print('init_lr       : ',init_lr)
-    print('epochs        : ',epochs)
-    # Dataset
-    dataset = LoadImagesAndLabels(path = train_path,img_size=img_size,flag_agu=flag_agu,fix_res = fix_res)
-    print('len train datasets : %s'%(dataset.__len__()))
-    # # Dataloader
-    dataloader = DataLoader(dataset,
-                            batch_size=batch_size,
-                            num_workers=num_workers,
-                            shuffle=True,
-                            pin_memory=False,
-                            drop_last = True)
-
-    # optimizer_Adam = torch.optim.Adam(model_.parameters(), lr=init_lr, betas=(0.9, 0.99),weight_decay=1e-6)
-    optimizer_SGD = optim.SGD(model_.parameters(), lr=init_lr, momentum=0.9, weight_decay=1e-8)# 优化器初始化
-    optimizer = optimizer_SGD
-
-    model_path = model_dir+'model_epoch-3.pth'
-    if os.access(model_path,os.F_OK):# checkpoint
-        chkpt = torch.load(model_path, map_location=device)
-        model_.load_state_dict(chkpt)
-        print('load model : ',model_path)
-
-
-    print('/**********************************************/')
-
-    loss_define = 'focal_loss'
-
-    if 'focal_loss' == loss_define:
-        criterion = FocalLoss(num_class = num_classes)
-    else:
-        criterion = nn.CrossEntropyLoss()#CrossEntropyLoss() 是 softmax 和 负对数损失的结合
-
-    step = 0
-    idx = 0
-    use_cuda = torch.cuda.is_available()
-    test_moment = 1
-
-    best_loss = np.inf
-    loss_mean = 0.
-    loss_idx = 0.
-    flag_change_lr_cnt = 0
-
-    for epoch in range(start_epoch, epochs):
-        print('\nepoch %d ------>>>'%epoch)
-        model_.train()
-
-        if loss_mean!=0.:
-            if best_loss > (loss_mean/loss_idx):
-                flag_change_lr_cnt = 0
-                best_loss = (loss_mean/loss_idx)
-            else:
-                flag_change_lr_cnt += 1
-
-                if flag_change_lr_cnt >=2:
-                    init_lr = init_lr*0.9
-                    set_learning_rate(optimizer, init_lr)
-                    flag_change_lr_cnt = 0
-
-        for i, (imgs_, labels_) in enumerate(dataloader):
-
-            if use_cuda:
-                imgs_ = imgs_.cuda()  # (bs, 3, h, w)
-                labels_ = labels_.cuda()
-
-
-            output = model_(imgs_.float())
-
-
-            loss = criterion(output, labels_)
-            loss_mean += loss.item()
-            loss_idx += 1.
-            if i%10 == 0:
-                acc = get_acc(output, labels_)
-                print('       %s - epoch [%s/%s] (%s/%s): '%(model_name,epoch,epochs,i,int(dataset.__len__()/batch_size)),' loss : %.6f - %.6f'%(loss_mean/loss_idx,loss.item()),' acc : %.4f'%acc,' lr : %.5f'%init_lr,' bs : ',batch_size,\
-                ' img_size : %s x %s'%(img_size[0],img_size[1]),' best_loss : %.4f'%best_loss)
-                # time.sleep(1)
-                # writer.add_scalar('data/loss', loss, step)
-                # writer.add_scalars('data/scalar_group', {'acc':acc,'lr':init_lr,'baseline':0.}, step)
-
-            # Compute gradient
-            loss.backward()
-
-            optimizer.step()
-            optimizer.zero_grad()
-            step += 1
-
-
-            if i%(int(dataset.__len__()/batch_size/2-1)) == 0 and i > 0:
-                torch.save(model_.state_dict(), save_model_dir + 'latest.pth')
-
-        torch.save(model_.state_dict(), save_model_dir + 'model_epoch-{}.pth'.format(epoch))
-
-    # writer.close()
-
-    print('well done ')
+    print('well done : {}'.format(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())))
