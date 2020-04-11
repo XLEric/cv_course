@@ -156,7 +156,7 @@ if __name__ == "__main__":
     parser.add_argument('--model_exp', type=str, default = './model_exp',
         help = 'model_exp') # 模型输出文件夹
     parser.add_argument('--model', type=str, default = 'resnet_50',
-        help = 'model') # 模型类型
+        help = 'model : resnet_18,resnet_34,resnet_50,resnet_101,resnet_152') # 模型类型
     parser.add_argument('--GPUS', type=str, default = '0',
         help = 'GPUS') # GPU选择
     parser.add_argument('--train_path', type=str, default = './datasets/train_datasets/',
