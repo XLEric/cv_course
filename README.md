@@ -1,4 +1,5 @@
 # cv_course
+* https://github.com/XiangLiK/cv_course  
 ## 课程介绍(Course Abstract)
 
 ## 课程安排（Course Schedule）
