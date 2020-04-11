@@ -13,7 +13,7 @@ import  sys
 from utils.model_utils import *
 from utils.common_utils import *
 from data_iter.datasets import *
-from loss.loss import LabelSmoothing,FocalLoss
+from loss.loss import FocalLoss
 from models.resnet import resnet18, resnet34, resnet50, resnet101, resnet152
 
 import cv2
@@ -26,22 +26,22 @@ def trainer(ops):
         set_seed(ops.seed)
         os.environ['CUDA_VISIBLE_DEVICES'] = ops.GPUS
 
-        train_path =  './datasets/train_datasets/'
+        train_path =  ops.train_path
         num_classes = len(os.listdir(ops.train_path)) # 模型类别个数
         print('num_classes : ',num_classes)
         #---------------------------------------------------------------- 构建模型
         print('use model : %s'%(ops.model))
 
         if ops.model == 'resnet_18':
-            model_=resnet50(pretrained = ops.pretrained)
+            model_=resnet18(pretrained = ops.pretrained)
         elif ops.model == 'resnet_34':
-            model_=resnet50(pretrained = ops.pretrained)
+            model_=resnet34(pretrained = ops.pretrained)
         elif ops.model == 'resnet_50':
             model_=resnet50(pretrained = ops.pretrained)
         elif ops.model == 'resnet_101':
-            model_=resnet50(pretrained = ops.pretrained)
+            model_=resnet101(pretrained = ops.pretrained)
         elif ops.model == 'resnet_152':
-            model_=resnet50(pretrained = ops.pretrained)
+            model_=resnet152(pretrained = ops.pretrained)
         else:
             print('error no the struct model : {}'.format(ops.model))
 
@@ -53,7 +53,7 @@ def trainer(ops):
         device = torch.device("cuda:0" if use_cuda else "cpu")
         model_ = model_.to(device)
 
-        print(model_)# 打印模型结构
+        # print(model_)# 打印模型结构
 
         # Dataset
         dataset = LoadImagesAndLabels(path = ops.train_path,img_size=ops.img_size,flag_agu=ops.flag_agu,fix_res = ops.fix_res)
@@ -150,12 +150,12 @@ def trainer(ops):
 
 if __name__ == "__main__":
 
-    parser = argparse.ArgumentParser(description=' Project Classification')
+    parser = argparse.ArgumentParser(description=' Project Classification Train')
     parser.add_argument('--seed', type=int, default = 999,
         help = 'seed') # 设置随机种子
     parser.add_argument('--model_exp', type=str, default = './model_exp',
         help = 'model_exp') # 模型输出文件夹
-    parser.add_argument('--model', type=str, default = 'resnet_50',
+    parser.add_argument('--model', type=str, default = 'resnet_101',
         help = 'model : resnet_18,resnet_34,resnet_50,resnet_101,resnet_152') # 模型类型
     parser.add_argument('--GPUS', type=str, default = '0',
         help = 'GPUS') # GPU选择
@@ -173,7 +173,7 @@ if __name__ == "__main__":
         help = 'learningRate_decay') # 学习率权重衰减率
     parser.add_argument('--weight_decay', type=float, default = 1e-8,
         help = 'weight_decay') # 优化器正则损失权重
-    parser.add_argument('--batch_size', type=int, default = 64,
+    parser.add_argument('--batch_size', type=int, default = 32,
         help = 'batch_size') # 训练每批次图像数量
     parser.add_argument('--epochs', type=int, default = 1000,
         help = 'epochs') # 训练周期

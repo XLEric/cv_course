@@ -41,8 +41,6 @@ if __name__ == "__main__":
     json.dump(unparsed,fs,ensure_ascii=False,indent = 1)
     fs.close()
 
-    while 1 :
-        pass
     mkdir_(args.train_datasets,flag_rm = True)# 创建训练集文件夹
     mkdir_(args.test_datasets,flag_rm = True)# 创建测试集文件夹
 
