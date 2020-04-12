@@ -20,3 +20,6 @@
 * 6、图片的前向推断运行命令：python inference.py , 可视化结果如下图所示。
 
 ![sample_2](https://github.com/XiangLiK/cv_course/raw/master/chapter_04/samples/sample_2.png)  
+
+## 联系方式 （Contact）  
+* E-mails: 305141918@qq.com  
