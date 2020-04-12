@@ -20,7 +20,7 @@ from torch.utils.data import DataLoader
 # from support.alignment_aug import *
 
 flag_debug = False
-
+# 非形变处理
 def letterbox(img_,size_=416,mean_rgb = (128,128,128)):
 
     shape_ = img_.shape[:2]  # shape = [height, width]
@@ -36,7 +36,7 @@ def letterbox(img_,size_=416,mean_rgb = (128,128,128)):
     img_a = cv2.copyMakeBorder(img_a, top_, bottom_, left_, right_, cv2.BORDER_CONSTANT, value=mean_rgb)  # padded square
     # print('fix size : ',img_a.shape)
     return img_a
-
+# 图像白化
 def prewhiten(x):
     mean = np.mean(x)
     std = np.std(x)
@@ -55,20 +55,17 @@ def select_device(force_cpu=False):
         if torch.cuda.device_count() > 1:
             device = torch.device('cuda' if cuda else 'cpu')
             print('Found %g GPUs' % torch.cuda.device_count())
-            # print('Multi-GPU Issue: https://github.com/ultralytics/yolov3/issues/21')
-            # torch.cuda.set_device(0)  # OPTIONAL: Set your GPU if multiple available
-            # print('Using ', torch.cuda.device_count(), ' GPUs')
 
     print('Using %s %s\n' % (device.type, torch.cuda.get_device_properties(0) if cuda else ''))
     return device
-
+# 图像亮度、对比度增强
 def contrast_img(img, c, b):  # 亮度就是每个像素所有通道都加上b
     rows, cols, channels = img.shape
     # 新建全零(黑色)图片数组:np.zeros(img1.shape, dtype=uint8)
     blank = np.zeros([rows, cols, channels], img.dtype)
     dst = cv2.addWeighted(img, c, blank, 1-c, b)
     return dst
-
+# 图像旋转
 def M_rotate_image(image , angle , cx , cy):
     '''
     图像旋转
@@ -89,7 +86,6 @@ def M_rotate_image(image , angle , cx , cy):
     M[0 , 2] += int(0.5 * nW) - cx
     M[1 , 2] += int(0.5 * nH) - cy
     return cv2.warpAffine(image , M , (nW , nH)) , M
-
 
 class LoadImagesAndLabels(Dataset):  # for training/testing
     def __init__(self, path, img_size=(224,224), flag_agu = False,fix_res = True):
@@ -147,9 +143,6 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
             else:
                 img_ = cv2.resize(img, (self.img_size[1],self.img_size[0]), interpolation = cv2.INTER_CUBIC)
 
-        # if self.flag_agu == True and random.randint(0,20)==1:
-        #     for i in range(random.randint(0,3)):
-        #         img_ = np.rot90(img_)
         if self.flag_agu == True and random.randint(0,6)==0:
             img_ = cv2.flip(img_, random.randint(-1,1))# 0上下翻转 ，-1，上下+左右翻转 ，1左右翻转
 
