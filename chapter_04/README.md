@@ -17,7 +17,7 @@
   * A) 建议仔细阅读 train.py 接口参数注释。
   * B) 训练参数记录和模型保存路径会为 model_exp 文件夹，默认模式是每次训练都会清除之前的训练相关文件，可以设置 train.py 的 clear_model_exp = Flase，就可以保持每次训练相关文件不清除。
 * 5、模型测试，简化测试，同时获得模型的性能指标，注：（该项目以预测分类置信度最大的标签与真实标签（gt_label）比较的策略，获得模型精确率（Precision） 和 召回率（Recall），及所有类别的平均精确率和平均召回率，同时结果保存在 test_日期.json。）  
-* 6、图片的前向推断运行命令：python inference.py , 可视化结果如下图所示。
+* 6、图片的前向推断运行命令：python inference.py , 可视化结果举例，如下图所示。
 
 ![sample_2](https://github.com/XiangLiK/cv_course/raw/master/chapter_04/samples/sample_2.png)  
 
