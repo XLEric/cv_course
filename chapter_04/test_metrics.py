@@ -109,7 +109,7 @@ def test(ops):
 
             score_ = output[max_index]
 
-            pre_str = str(idx) + ') ' + ' - score : '+str(score_)+' ---- gt label : '+str(gt_label)+' <-> pre label : '+str(max_index)
+            pre_str = str(idx) + ')  '+ ops.model + ' - score : '+str(score_)+' ---- gt label : '+str(gt_label)+' <-> pre label : '+str(max_index)
             print(pre_str)
 
 
@@ -135,9 +135,9 @@ def test(ops):
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description=' Project Classification Test')
-    parser.add_argument('--test_model', type=str, default = './model_s101_dir/model_epoch-25.pth',
+    parser.add_argument('--test_model', type=str, default = './model_s152_dir/model_epoch-316.pth',
         help = 'test_model') # 模型路径
-    parser.add_argument('--model', type=str, default = 'resnet_101',
+    parser.add_argument('--model', type=str, default = 'resnet_152',
         help = 'model : resnet_18,resnet_34,resnet_50,resnet_101,resnet_152') # 模型类型
     parser.add_argument('--GPUS', type=str, default = '0',
         help = 'GPUS') # GPU选择

@@ -53,6 +53,8 @@ if __name__ == "__main__":
 
     train_cnt = 0
     test_cnt = 0
+    img_mean_w = 0.# 统计crop图片 width 均值
+    img_mean_h = 0.# 统计crop图片 height 均值
     for i in range(len(imgs_list)):
         image_id,image_name = imgs_list[i].strip('\n').split(' ')# 获取信息 ：图片id 、图片相对路径
         doc_class = image_name.split('/')[0]# 每一类文件夹
@@ -74,6 +76,9 @@ if __name__ == "__main__":
         if args.make_cropdata:# 是否制作 crop 数据集
             img = cv2.imread(args.images_path + image_name)
             cv2.imwrite(path_s +image_name,img[y1:y2,x1:x2,:])
+            img_mean_w += (x2-x1)
+            img_mean_h += (y2-y1)
+            print('w,h : ({},{})'.format(int(img_mean_w/(train_cnt+test_cnt)),int(img_mean_h/(train_cnt+test_cnt))))
         else:# 制作原图数据集
             shutil.copyfile(args.images_path + image_name,path_s +image_name )# 将原图片路径拷贝到相应的训练集和测试集类别文件夹
 
