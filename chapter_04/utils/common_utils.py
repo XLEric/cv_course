@@ -5,6 +5,8 @@
 import os
 import shutil
 import cv2
+import numpy as np
+import json
 
 def mkdir_(path, flag_rm=False):
     if os.path.exists(path):
@@ -27,3 +29,14 @@ def plot_box(bbox, img, color=None, label=None, line_thickness=None):
         cv2.rectangle(img, c1, c2, color, -1)  # label 矩形填充
         # 文本绘制
         cv2.putText(img, label, (c1[0], c1[1] - 2), 0, tl / 4, [225, 255, 255],thickness=tf, lineType=cv2.LINE_AA)
+
+class JSON_Encoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, np.integer):
+            return int(obj)
+        elif isinstance(obj, np.floating):
+            return float(obj)
+        elif isinstance(obj, np.ndarray):
+            return obj.tolist()
+        else:
+            return super(JSON_Encoder, self).default(obj)

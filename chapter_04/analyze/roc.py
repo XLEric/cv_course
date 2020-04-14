@@ -30,16 +30,19 @@ def roc(ops):
         score,label = data[i]
         scores.append(score)
         labels.append(label)
+
+        # if i >20:
+        #     break
         # print('{}) label {}'.format(i+1,label))
 
     scores = np.array(scores)
     labels = np.array(labels)
 
-    labels_one_hot = label_binarize(labels, np.arange(ops.num_classes))  #装换成类似二进制的编码
+    labels_one_hot = label_binarize(labels, np.arange(ops.num_classes))  #装换为独热编码
 
-    print(scores.shape,labels.shape)
+    print(scores.shape,labels_one_hot.shape)
 
-    metrics.roc_auc_score(labels_one_hot, scores, average='macro')#调用函数计算micro类型的AUC  : micro / macro
+    metrics.roc_auc_score(labels_one_hot, scores, average='micro')#调用函数计算micro类型的AUC  : micro / macro
 
     fpr, tpr, thresholds = metrics.roc_curve(labels_one_hot.ravel(),scores.ravel())#首先将矩阵 labels_one_hot 和 scores 展开，然后计算假正例率FPR和真正例率TPR
     auc = metrics.auc(fpr, tpr)
@@ -51,6 +54,22 @@ def roc(ops):
     #FPR就是横坐标,TPR就是纵坐标
     plt.plot(fpr, tpr, c = 'r', lw = 2, alpha = 0.7, label = u'AUC=%.6f' % auc)
     plt.plot((0, 1), (0, 1), c = '#808080', lw = 1, ls = '--', alpha = 0.7)
+
+    max_dst = 0.
+    max_dst_x,max_dst_y = 0.,0.
+    max_thr = 0.
+    for i in range(len(thresholds)):
+        y = tpr[i]
+        x = fpr[i]
+        if max_dst < (y-x):
+            max_dst = (y-x)
+            max_dst_x,max_dst_y = x,y
+            max_thr = thresholds[i]
+
+
+    plt.scatter(max_dst_x,max_dst_y,s=30, c='b', marker = 'o')
+    plt.text(max_dst_x,max_dst_y, u'thr=%.5f'%max_thr)
+
     plt.xlim((-0.01, 1.02))
     plt.ylim((-0.01, 1.02))
     plt.xticks(np.arange(0, 1.1, 0.1))
@@ -66,7 +85,7 @@ def roc(ops):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=' ROC ')
-    parser.add_argument('--file', type=str, default = './roc_metrics_2020-04-14_15-18-46.json',
+    parser.add_argument('--file', type=str, default = './roc_metrics_2020-04-14_15-30-23.json',
         help = 'file') # 分析文件路径
     parser.add_argument('--num_classes', type=int, default = 200,
         help = 'num_classes') # 分类类别

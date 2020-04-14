@@ -108,7 +108,7 @@ def test(ops,timestamp):
             outputs = outputs[0]
 
             output = outputs.cpu().detach().numpy()
-            roc_metrics_dict['roc_metrics'].append((output,idx))
+            roc_metrics_dict['roc_metrics'].append((output,gt_label))
             output = np.array(output)
 
             max_index = np.argmax(output)
