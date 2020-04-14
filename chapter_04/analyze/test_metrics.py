@@ -4,6 +4,8 @@
 # function: test metrics
 
 import os
+import sys
+sys.path.append('./')
 import argparse
 import torch
 import torch.nn as nn
