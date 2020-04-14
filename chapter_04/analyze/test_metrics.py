@@ -17,9 +17,10 @@ import cv2
 import torch.nn.functional as F
 import json
 from loss.loss import FocalLoss
+from utils.common_utils import *
 
 from models.resnet import resnet50, resnet18, resnet34, resnet101, resnet152
-def test(ops):
+def test(ops,timestamp):
     os.environ['CUDA_VISIBLE_DEVICES'] = ops.GPUS
 
     test_path =  ops.test_path
@@ -70,6 +71,8 @@ def test(ops):
             dict_metrics[idx]['pre_right'] = 0.
             dict_metrics[idx]['gt_sum'] = len(os.listdir(path_doc))
 
+    roc_metrics_dict = {}
+    roc_metrics_dict['roc_metrics'] = []
     for idx,doc in enumerate(sorted(os.listdir(ops.test_path), key=lambda x:int(x.split('.')[0]), reverse=False)):
 
         gt_label = idx
@@ -103,6 +106,7 @@ def test(ops):
             outputs = outputs[0]
 
             output = outputs.cpu().detach().numpy()
+            roc_metrics_dict['roc_metrics'].append((output,idx))
             output = np.array(output)
 
             max_index = np.argmax(output)
@@ -117,27 +121,40 @@ def test(ops):
 
             if gt_label == max_index:
                 dict_metrics[max_index]['pre_right'] += 1.
+
+    #---------------------------------------------------------------------------
+    fs = open('roc_metrics_{}.json'.format(timestamp),"w",encoding='utf-8')
+    json.dump(roc_metrics_dict,fs,ensure_ascii=False,indent = 1,cls = JSON_Encoder)
+    fs.close()
+
     MAP = 0.
     MRECALL = 0.
-    for key in dict_metrics.keys():
-        print('{}  Precision {} ReCall {}'.format(dict_metrics[key]['name'],
-            dict_metrics[key]['pre_right']/dict_metrics[key]['pre_sum'],
-            dict_metrics[key]['pre_right']/dict_metrics[key]['gt_sum']))
-        MAP += (dict_metrics[key]['pre_right']/dict_metrics[key]['pre_sum'])
-        MRECALL += (dict_metrics[key]['pre_right']/dict_metrics[key]['gt_sum'])
 
-    dict_metrics['MAP'] = MAP/200.
-    dict_metrics['MRECALL'] = MRECALL/200.
-    print('MAP : {} , MRECALL : {}'.format(dict_metrics['MAP'],dict_metrics['MRECALL']))
+    try:
+        for key in dict_metrics.keys():
+            if dict_metrics[key]['pre_sum'] > 0:
+                print('{}  Precision {} ReCall {}'.format(dict_metrics[key]['name'],
+                    dict_metrics[key]['pre_right']/dict_metrics[key]['pre_sum'],
+                    dict_metrics[key]['pre_right']/dict_metrics[key]['gt_sum']))
+                MAP += (dict_metrics[key]['pre_right']/dict_metrics[key]['pre_sum'])
+            MRECALL += (dict_metrics[key]['pre_right']/dict_metrics[key]['gt_sum'])
+
+        dict_metrics['MAP'] = MAP/200.
+        dict_metrics['MRECALL'] = MRECALL/200.
+        print('MAP : {} , MRECALL : {}'.format(dict_metrics['MAP'],dict_metrics['MRECALL']))
+    except Exception as e:
+        print('Exception : ',e) # 打印异常
+        print('Exception  file : ', e.__traceback__.tb_frame.f_globals['__file__'])# 发生异常所在的文件
+        print('Exception  line : ', e.__traceback__.tb_lineno)# 发生异常所在的行数
+
     return dict_metrics
-
 
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description=' Project Classification Test')
-    parser.add_argument('--test_model', type=str, default = './model_s152_dir/model_epoch-316.pth',
+    parser.add_argument('--test_model', type=str, default = './model_s50_dir/model_epoch-8.pth',
         help = 'test_model') # 模型路径
-    parser.add_argument('--model', type=str, default = 'resnet_152',
+    parser.add_argument('--model', type=str, default = 'resnet_50',
         help = 'model : resnet_18,resnet_34,resnet_50,resnet_101,resnet_152') # 模型类型
     parser.add_argument('--GPUS', type=str, default = '0',
         help = 'GPUS') # GPU选择
@@ -166,7 +183,7 @@ if __name__ == "__main__":
 
     loc_time_str = time.strftime("%Y-%m-%d_%H-%M-%S", loc_time)
 
-    dict_metrics = test(ops = args)
+    dict_metrics = test(ops = args,timestamp = loc_time_str)
     unparsed['metrics'] = dict_metrics
     fs = open('test_{}.json'.format(loc_time_str),"w",encoding='utf-8')
     json.dump(unparsed,fs,ensure_ascii=False,indent = 1)
