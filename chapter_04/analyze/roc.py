@@ -1,3 +1,8 @@
+#-*-coding:utf-8-*-
+# date:2020-04-12
+# Author: xiang li
+#function： ROC
+
 import os
 import argparse
 import json
@@ -6,6 +11,8 @@ from sklearn import metrics
 from sklearn.preprocessing import label_binarize
 import matplotlib as mpl
 import matplotlib.pyplot as plt
+import random
+
 '''
 方法1：每种类别下，都可以得到m个测试样本为该类别的概率（矩阵P中的列）。
 所以，根据概率矩阵P和标签矩阵L中对应的每一列，可以计算出各个阈值下的假正例率（FPR）和真正例率（TPR），绘制出一条ROC曲线。
@@ -15,6 +22,14 @@ import matplotlib.pyplot as plt
 基于这两点，将标签矩阵L和概率矩阵P分别按行展开，转置后形成两列，这就得到了一个二分类的结果。
 所以，此方法经过计算后可以直接得到最终的ROC曲线。
 '''
+
+
+def randomcolor():
+    colorArr = ['1','2','3','4','5','6','7','8','9','A','B','C','D','E','F']
+    color = ""
+    for i in range(6):
+        color += colorArr[random.randint(0,14)]
+    return "#"+color
 def roc(ops):
     f = open(ops.file, encoding='utf-8')#读取 json文件
     data = json.load(f)
@@ -30,10 +45,6 @@ def roc(ops):
         score,label = data[i]
         scores.append(score)
         labels.append(label)
-
-        # if i >20:
-        #     break
-        # print('{}) label {}'.format(i+1,label))
 
     scores = np.array(scores)
     labels = np.array(labels)
@@ -68,7 +79,7 @@ def roc(ops):
 
 
     plt.scatter(max_dst_x,max_dst_y,s=30, c='b', marker = 'o')
-    plt.text(max_dst_x,max_dst_y, u'thr=%.5f'%max_thr)
+    plt.text(max_dst_x,max_dst_y, u'fpr-tpr(%.3f,%.3f) ,thr=%.5f'%(max_dst_y,max_dst_x,max_thr))
 
     plt.xlim((-0.01, 1.02))
     plt.ylim((-0.01, 1.02))
@@ -85,7 +96,7 @@ def roc(ops):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=' ROC ')
-    parser.add_argument('--file', type=str, default = './roc_metrics_2020-04-14_15-30-23.json',
+    parser.add_argument('--file', type=str, default = './roc_metrics_2020-04-15_11-42-06.json',
         help = 'file') # 分析文件路径
     parser.add_argument('--num_classes', type=int, default = 200,
         help = 'num_classes') # 分类类别
