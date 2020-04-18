@@ -24,7 +24,7 @@ from models.resnet import resnet18, resnet34, resnet50, resnet101, resnet152
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description=' Project Classification Test')
-    parser.add_argument('--test_model', type=str, default = './model_s152_dir/model_epoch-450.pth',
+    parser.add_argument('--test_model', type=str, default = './model_s152256_dir/model_epoch-1536.pth',
         help = 'test_model') # 模型路径
     parser.add_argument('--model', type=str, default = 'resnet_152',
         help = 'model : resnet_18,resnet_34,resnet_50,resnet_101,resnet_152') # 模型类型
@@ -34,7 +34,7 @@ if __name__ == "__main__":
         help = 'GPUS') # GPU选择
     parser.add_argument('--test_path', type=str, default = './example/',
         help = 'test_path') # 测试集路径
-    parser.add_argument('--img_size', type=tuple , default = (224,224),
+    parser.add_argument('--img_size', type=tuple , default = (256,256),
         help = 'img_size') # 输入模型图片尺寸
     parser.add_argument('--fix_res', type=bool , default = True,
         help = 'fix_resolution') # 输入模型样本图片是否保证图像分辨率的长宽比

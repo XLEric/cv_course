@@ -21,8 +21,11 @@ import time
 import json
 from datetime import datetime
 
-def trainer(ops):
+def trainer(ops,f_log):
     try:
+        if ops.log_flag:
+            sys.stdout = f_log
+
         set_seed(ops.seed)
         os.environ['CUDA_VISIBLE_DEVICES'] = ops.GPUS
 
@@ -93,6 +96,8 @@ def trainer(ops):
         init_lr = ops.init_lr # 学习率
 
         for epoch in range(0, ops.epochs):
+            if ops.log_flag:
+                sys.stdout = f_log
             print('\nepoch %d ------>>>'%epoch)
             model_.train()
             # 学习率更新策略
@@ -179,7 +184,7 @@ if __name__ == "__main__":
         help = 'epochs') # 训练周期
     parser.add_argument('--num_workers', type=int, default = 6,
         help = 'num_workers') # 训练数据生成器线程数
-    parser.add_argument('--img_size', type=tuple , default = (224,224),
+    parser.add_argument('--img_size', type=tuple , default = (256,256),
         help = 'img_size') # 输入模型图片尺寸
     parser.add_argument('--flag_agu', type=bool , default = True,
         help = 'data_augmentation') # 训练数据生成器是否进行数据扩增
@@ -187,8 +192,11 @@ if __name__ == "__main__":
         help = 'fix_resolution') # 输入模型样本图片是否保证图像分辨率的长宽比
     parser.add_argument('--clear_model_exp', type=bool, default = True,
         help = 'clear_model_exp') # 模型输出文件夹是否进行清除
+    parser.add_argument('--log_flag', type=bool, default = False,
+        help = 'log flag') # 是否保存训练 log
 
-    print('\n/******************* {} ******************/\n'.format(parser.description))
+
+
     #--------------------------------------------------------------------------
     args = parser.parse_args()# 解析添加参数
     #--------------------------------------------------------------------------
@@ -197,7 +205,13 @@ if __name__ == "__main__":
     args.model_exp = args.model_exp + '/' + time.strftime("%Y-%m-%d_%H-%M-%S", loc_time)+'/'
     mkdir_(args.model_exp, flag_rm=args.clear_model_exp)
 
-    print('----------------------------------')
+    f_log = None
+    if args.log_flag:
+        f_log = open(args.model_exp+'/train_{}.log'.format(time.strftime("%Y-%m-%d_%H-%M-%S",loc_time)), 'a+')
+        sys.stdout = f_log
+
+    print('---------------------------------- log : {}'.format(time.strftime("%Y-%m-%d %H:%M:%S", loc_time)))
+    print('\n/******************* {} ******************/\n'.format(parser.description))
 
     unparsed = vars(args) # parse_args()方法的返回值为namespace，用vars()内建函数化为字典
     for key in unparsed.keys():
@@ -209,6 +223,8 @@ if __name__ == "__main__":
     json.dump(unparsed,fs,ensure_ascii=False,indent = 1)
     fs.close()
 
-    trainer(ops = args)# 模型训练
+    trainer(ops = args,f_log = f_log)# 模型训练
 
+    if args.log_flag:
+        sys.stdout = f_log
     print('well done : {}'.format(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())))
