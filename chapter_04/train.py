@@ -100,14 +100,14 @@ def tester(ops,epoch,model,criterion,
 
 def trainer(ops,f_log):
     try:
+        os.environ['CUDA_VISIBLE_DEVICES'] = ops.GPUS
+        
         if ops.log_flag:
             sys.stdout = f_log
 
         set_seed(ops.seed)
 
         train_split,train_split_label,val_split,val_split_label = split_trainval_datasets(ops)
-
-        os.environ['CUDA_VISIBLE_DEVICES'] = ops.GPUS
 
         train_path =  ops.train_path
         num_classes = len(os.listdir(ops.train_path)) # 模型类别个数
@@ -127,8 +127,6 @@ def trainer(ops,f_log):
             model_=resnet152(pretrained = ops.pretrained, num_classes=num_classes, img_size=ops.img_size[0],dropout_factor=ops.dropout)
         else:
             print('error no the struct model : {}'.format(ops.model))
-
-        num_ftrs = model_.fc
 
         print('model_.fc : {}'.format(model_.fc))
 
