@@ -32,20 +32,17 @@ def test(ops,timestamp):
     print('use model : %s'%(ops.model))
 
     if ops.model == 'resnet_18':
-        model_=resnet18()
+        model_=resnet18(num_classes=ops.num_classes, img_size=ops.img_size[0])
     elif ops.model == 'resnet_34':
-        model_=resnet34()
+        model_=resnet34(num_classes=ops.num_classes, img_size=ops.img_size[0])
     elif ops.model == 'resnet_50':
-        model_=resnet50()
+        model_=resnet50(num_classes=ops.num_classes, img_size=ops.img_size[0])
     elif ops.model == 'resnet_101':
-        model_=resnet101()
+        model_=resnet101(num_classes=ops.num_classes, img_size=ops.img_size[0])
     elif ops.model == 'resnet_152':
-        model_=resnet152()
+        model_=resnet152(num_classes=ops.num_classes, img_size=ops.img_size[0])
     else:
         print('error no the struct model : {}'.format(ops.model))
-
-    num_ftrs = model_.fc.in_features
-    model_.fc = nn.Linear(num_ftrs, num_classes)
 
     use_cuda = torch.cuda.is_available()
 
@@ -158,6 +155,8 @@ if __name__ == "__main__":
         help = 'test_model') # 模型路径
     parser.add_argument('--model', type=str, default = 'resnet_152',
         help = 'model : resnet_18,resnet_34,resnet_50,resnet_101,resnet_152') # 模型类型
+    parser.add_argument('--num_class', type=int , default = 200,
+        help = 'num_class') #  分类类别个数
     parser.add_argument('--GPUS', type=str, default = '0',
         help = 'GPUS') # GPU选择
     parser.add_argument('--test_path', type=str, default = './datasets/test_datasets/',
@@ -186,6 +185,7 @@ if __name__ == "__main__":
     loc_time_str = time.strftime("%Y-%m-%d_%H-%M-%S", loc_time)
 
     dict_metrics = test(ops = args,timestamp = loc_time_str)
+
     unparsed['metrics'] = dict_metrics
     fs = open('test_{}.json'.format(loc_time_str),"w",encoding='utf-8')
     json.dump(unparsed,fs,ensure_ascii=False,indent = 1)

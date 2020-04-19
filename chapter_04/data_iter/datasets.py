@@ -74,7 +74,7 @@ def M_rotate_image(image , angle , cx , cy):
     return cv2.warpAffine(image , M , (nW , nH)) , M
 
 class LoadImagesAndLabels(Dataset):  # for training/testing
-    def __init__(self, path, img_size=(224,224), flag_agu = False,fix_res = True):
+    def __init__(self, path, img_size=(224,224), flag_agu = False,fix_res = True,val_split = []):
         print('img_size (height,width) : ',img_size[0],img_size[1])
         labels_ = []
         files_ = []
@@ -83,7 +83,7 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
             print(' %s label is %s \n'%(doc,idx))
 
             for file in os.listdir(path+doc):
-                if '.jpg' in file:
+                if '.jpg' in file and  ((path+doc + '/' + file) not in val_split) :# 同时过滤掉 val 数据集
                     labels_.append(idx)
                     files_.append(path+doc + '/' + file)
             print()

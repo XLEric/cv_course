@@ -1,6 +1,8 @@
 #-*-coding:utf-8-*-
 # date:2020-04-11
 # Author: xiang li
+
+import os
 import numpy as np
 import torch
 import torch.backends.cudnn as cudnn
@@ -24,3 +26,35 @@ def set_seed(seed = 666):
         torch.cuda.manual_seed(seed)
         torch.cuda.manual_seed_all(seed)
         cudnn.deterministic = True
+
+def split_trainval_datasets(ops):
+    print(' --------------->>> split_trainval_datasets ')
+    train_split_datasets = []
+    train_split_datasets_label = []
+
+    val_split_datasets = []
+    val_split_datasets_label = []
+    for idx,doc in enumerate(sorted(os.listdir(ops.train_path), key=lambda x:int(x.split('.')[0]), reverse=False)):
+        # print(' %s label is %s \n'%(doc,idx))
+
+        data_list = os.listdir(ops.train_path+doc)
+        random.shuffle(data_list)
+
+        cal_split_num = int(len(data_list)*ops.val_factor)
+
+        for i,file in enumerate(data_list):
+            if '.jpg' in file:
+                if i < cal_split_num:
+                    val_split_datasets.append(ops.train_path+doc + '/' + file)
+                    val_split_datasets_label.append(idx)
+                else:
+                    train_split_datasets.append(ops.train_path+doc + '/' + file)
+                    train_split_datasets_label.append(idx)
+
+                print(ops.train_path+doc + '/' + file,idx)
+
+    print('\n')
+    print('train_split_datasets len {}'.format(len(train_split_datasets)))
+    print('val_split_datasets len {}'.format(len(val_split_datasets)))
+
+    return train_split_datasets,train_split_datasets_label,val_split_datasets,val_split_datasets_label

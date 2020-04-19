@@ -61,20 +61,18 @@ if __name__ == "__main__":
     print('use model : %s'%(ops.model))
 
     if ops.model == 'resnet_18':
-        model_=resnet18()
+        model_=resnet18(num_classes=ops.num_classes, img_size=ops.img_size[0])
     elif ops.model == 'resnet_34':
-        model_=resnet34()
+        model_=resnet34(num_classes=ops.num_classes, img_size=ops.img_size[0])
     elif ops.model == 'resnet_50':
-        model_=resnet50()
+        model_=resnet50(num_classes=ops.num_classes, img_size=ops.img_size[0])
     elif ops.model == 'resnet_101':
-        model_=resnet101()
+        model_=resnet101(num_classes=ops.num_classes, img_size=ops.img_size[0])
     elif ops.model == 'resnet_152':
-        model_=resnet152()
+        model_=resnet152(num_classes=ops.num_classes, img_size=ops.img_size[0])
     else:
         print('error no the struct model : {}'.format(ops.model))
 
-    num_ftrs = model_.fc.in_features
-    model_.fc = nn.Linear(num_ftrs, num_classes)
 
     use_cuda = torch.cuda.is_available()
 

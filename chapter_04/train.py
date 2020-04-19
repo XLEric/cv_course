@@ -21,12 +21,92 @@ import time
 import json
 from datetime import datetime
 
+def tester(ops,epoch,model,criterion,
+    train_split,train_split_label,val_split,val_split_label,
+    use_cuda):
+    #
+    print('\n------------------------->>> tester traival loss')
+
+    loss_train = []
+    loss_val = []
+    with torch.no_grad():
+        # train loss
+        for i in range(len(train_split)):
+            file = train_split[i]
+            label = train_split_label[i]
+
+            img = cv2.imread(file)
+            # 输入图片预处理
+            if ops.fix_res:
+                img_ = letterbox(img,size_=ops.img_size[0],mean_rgb = (128,128,128))
+            else:
+                img_ = cv2.resize(img, (ops.img_size[1],ops.img_size[0]), interpolation = cv2.INTER_CUBIC)
+
+            img_ = img_.astype(np.float32)
+            img_ = (img_-128.)/256.
+
+            img_ = img_.transpose(2, 0, 1)
+            img_ = torch.from_numpy(img_)
+            img_ = img_.unsqueeze_(0)
+
+            label_ = np.array(label)
+            label_ = torch.from_numpy(label_).float()
+
+            if use_cuda:
+                img_ = img_.cuda()  # (bs, 3, h, w)
+                labels_ = label_.cuda()  # (bs, 3, h, w)
+
+
+            output = model(img_.float())
+
+            loss = criterion(output, labels_)
+            loss_train.append(loss.item())
+        # val loss
+        for i in range(len(val_split)):
+            file = val_split[i]
+            label = val_split_label[i]
+
+            img = cv2.imread(file)
+            # 输入图片预处理
+            if ops.fix_res:
+                img_ = letterbox(img,size_=ops.img_size[0],mean_rgb = (128,128,128))
+            else:
+                img_ = cv2.resize(img, (ops.img_size[1],ops.img_size[0]), interpolation = cv2.INTER_CUBIC)
+
+            img_ = img_.astype(np.float32)
+            img_ = (img_-128.)/256.
+
+            img_ = img_.transpose(2, 0, 1)
+            img_ = torch.from_numpy(img_)
+            img_ = img_.unsqueeze_(0)
+
+            label_ = np.array(label)
+            label_ = torch.from_numpy(label_).float()
+
+            if use_cuda:
+                img_ = img_.cuda()  # (bs, 3, h, w)
+                labels_ = label_.cuda()  # (bs, 3, h, w)
+
+
+            output = model(img_.float())
+
+            loss = criterion(output, labels_)
+            loss_val.append(loss.item())
+
+    print('loss_train : {}, loss_val : {} '.format(np.mean(loss_train),np.mean(loss_val)))
+
+    return np.mean(loss_train),np.mean(loss_val)
+
+
 def trainer(ops,f_log):
     try:
         if ops.log_flag:
             sys.stdout = f_log
 
         set_seed(ops.seed)
+
+        train_split,train_split_label,val_split,val_split_label = split_trainval_datasets(ops)
+
         os.environ['CUDA_VISIBLE_DEVICES'] = ops.GPUS
 
         train_path =  ops.train_path
@@ -48,8 +128,10 @@ def trainer(ops,f_log):
         else:
             print('error no the struct model : {}'.format(ops.model))
 
-        num_ftrs = model_.fc.in_features
-        model_.fc = nn.Linear(num_ftrs, num_classes)
+        num_ftrs = model_.fc
+
+        print('model_.fc : {}'.format(model_.fc))
+
 
         use_cuda = torch.cuda.is_available()
 
@@ -57,9 +139,8 @@ def trainer(ops,f_log):
         model_ = model_.to(device)
 
         # print(model_)# 打印模型结构
-
         # Dataset
-        dataset = LoadImagesAndLabels(path = ops.train_path,img_size=ops.img_size,flag_agu=ops.flag_agu,fix_res = ops.fix_res)
+        dataset = LoadImagesAndLabels(path = ops.train_path,img_size=ops.img_size,flag_agu=ops.flag_agu,fix_res = ops.fix_res,val_split = val_split)
         print('len train datasets : %s'%(dataset.__len__()))
         # Dataloader
         dataloader = DataLoader(dataset,
@@ -95,6 +176,8 @@ def trainer(ops,f_log):
         flag_change_lr_cnt = 0 # 学习率更新计数器
         init_lr = ops.init_lr # 学习率
 
+        epochs_loss_dict = {}
+
         for epoch in range(0, ops.epochs):
             if ops.log_flag:
                 sys.stdout = f_log
@@ -127,10 +210,10 @@ def trainer(ops,f_log):
                 if i%10 == 0:
                     acc = get_acc(output, labels_)
                     loc_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
-                    print('   %s - %s - epoch [%s/%s] (%s/%s): '%(loc_time,ops.model,epoch,ops.epochs,i,int(dataset.__len__()/ops.batch_size)),\
-                    ' loss : %.6f - %.6f'%(loss_mean/loss_idx,loss.item()),\
-                    ' acc : %.4f'%acc,' lr : %.5f'%init_lr,' bs : ',ops.batch_size,\
-                    ' img_size : %s x %s'%(ops.img_size[0],ops.img_size[1]),' best_loss : %.4f'%best_loss)
+                    print('  %s - %s - epoch [%s/%s] (%s/%s):'%(loc_time,ops.model,epoch,ops.epochs,i,int(dataset.__len__()/ops.batch_size)),\
+                    'loss : %.6f - %.6f'%(loss_mean/loss_idx,loss.item()),\
+                    ' acc : %.4f'%acc,' lr : %.5f'%init_lr,' bs :',ops.batch_size,\
+                    ' img_size: %s x %s'%(ops.img_size[0],ops.img_size[1]),' best_loss: %.4f'%best_loss)
                     # time.sleep(1)
                     # writer.add_scalar('data/loss', loss, step)
                     # writer.add_scalars('data/scalar_group', {'acc':acc,'lr':init_lr,'baseline':0.}, step)
@@ -148,6 +231,23 @@ def trainer(ops,f_log):
                     torch.save(model_.state_dict(), ops.model_exp + 'latest.pth')
             # 每一个 epoch 进行模型保存
             torch.save(model_.state_dict(), ops.model_exp + 'model_epoch-{}.pth'.format(epoch))
+
+            if len(val_split) > 0 and (epoch%ops.test_interval==0): # test
+
+                model_.eval()
+                loss_train,loss_val = tester(ops,epoch,model_,criterion,
+                        train_split,train_split_label,val_split,val_split_label,
+                        use_cuda)
+
+                epochs_loss_dict['epoch_'+str(epoch)] = {}
+
+                epochs_loss_dict['epoch_'+str(epoch)]['loss_train'] = loss_train
+                epochs_loss_dict['epoch_'+str(epoch)]['loss_val'] = loss_val
+
+                f_loss = open(ops.model_exp + 'loss_epoch_trainval.json',"w",encoding='utf-8')
+                json.dump(epochs_loss_dict,f_loss,ensure_ascii=False,indent = 1,cls = JSON_Encoder)
+                f_loss.close()
+
     except Exception as e:
         print('Exception : ',e) # 打印异常
         print('Exception  file : ', e.__traceback__.tb_frame.f_globals['__file__'])# 发生异常所在的文件
@@ -166,6 +266,10 @@ if __name__ == "__main__":
         help = 'GPUS') # GPU选择
     parser.add_argument('--train_path', type=str, default = './datasets/train_datasets/',
         help = 'train_path') # 训练集路径
+    parser.add_argument('--val_factor', type=float, default = 0.1,
+        help = 'val_factor') # 从训练集中分离验证集对应的比例
+    parser.add_argument('--test_interval', type=int, default = 1,
+        help = 'test_interval') # 训练集和测试集 计算 loss 间隔
     parser.add_argument('--pretrained', type=bool, default = True,
         help = 'imageNet_Pretrain') # 初始化学习率
     parser.add_argument('--fintune_model', type=str, default = 'None',
