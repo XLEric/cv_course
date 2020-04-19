@@ -36,15 +36,15 @@ def trainer(ops,f_log):
         print('use model : %s'%(ops.model))
 
         if ops.model == 'resnet_18':
-            model_=resnet18(pretrained = ops.pretrained)
+            model_=resnet18(pretrained = ops.pretrained, num_classes=num_classes, img_size=ops.img_size[0],dropout_factor=ops.dropout)
         elif ops.model == 'resnet_34':
-            model_=resnet34(pretrained = ops.pretrained)
+            model_=resnet34(pretrained = ops.pretrained, num_classes=num_classes, img_size=ops.img_size[0],dropout_factor=ops.dropout)
         elif ops.model == 'resnet_50':
-            model_=resnet50(pretrained = ops.pretrained)
+            model_=resnet50(pretrained = ops.pretrained, num_classes=num_classes, img_size=ops.img_size[0],dropout_factor=ops.dropout)
         elif ops.model == 'resnet_101':
-            model_=resnet101(pretrained = ops.pretrained)
+            model_=resnet101(pretrained = ops.pretrained, num_classes=num_classes, img_size=ops.img_size[0],dropout_factor=ops.dropout)
         elif ops.model == 'resnet_152':
-            model_=resnet152(pretrained = ops.pretrained)
+            model_=resnet152(pretrained = ops.pretrained, num_classes=num_classes, img_size=ops.img_size[0],dropout_factor=ops.dropout)
         else:
             print('error no the struct model : {}'.format(ops.model))
 
@@ -180,6 +180,8 @@ if __name__ == "__main__":
         help = 'weight_decay') # 优化器正则损失权重
     parser.add_argument('--batch_size', type=int, default = 32,
         help = 'batch_size') # 训练每批次图像数量
+    parser.add_argument('--dropout', type=float, default = 0.5,
+        help = 'dropout') # dropout
     parser.add_argument('--epochs', type=int, default = 1000,
         help = 'epochs') # 训练周期
     parser.add_argument('--num_workers', type=int, default = 6,
@@ -194,8 +196,6 @@ if __name__ == "__main__":
         help = 'clear_model_exp') # 模型输出文件夹是否进行清除
     parser.add_argument('--log_flag', type=bool, default = False,
         help = 'log flag') # 是否保存训练 log
-
-
 
     #--------------------------------------------------------------------------
     args = parser.parse_args()# 解析添加参数

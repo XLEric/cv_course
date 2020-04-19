@@ -53,7 +53,6 @@ class BasicBlock(nn.Module):
 
         return out
 
-
 class Bottleneck(nn.Module):
     expansion = 4
 
@@ -95,7 +94,7 @@ class Bottleneck(nn.Module):
 
 class ResNet(nn.Module):
 
-    def __init__(self, block, layers, num_classes=1000, img_size=224):
+    def __init__(self, block, layers, num_classes=1000, img_size=224,dropout_factor = 0.5):
         self.inplanes = 64
         super(ResNet, self).__init__()
         # 26
@@ -115,7 +114,10 @@ class ResNet(nn.Module):
         assert img_size % 32 == 0
         pool_kernel = int(img_size / 32)
         self.avgpool = nn.AvgPool2d(pool_kernel, stride=1, ceil_mode=True)
-        self.fc = nn.Linear(512*4 * block.expansion, num_classes)
+
+        self.dropout = nn.Dropout(dropout_factor)
+
+        self.fc = nn.Linear(512 * block.expansion, num_classes)
 
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
@@ -155,6 +157,7 @@ class ResNet(nn.Module):
 
         x = self.avgpool(x)
         x = x.view(x.size(0), -1)
+        x = self.dropout(x)
         # print(x.size())
         x = self.fc(x)
 
@@ -253,6 +256,6 @@ def resnet152(pretrained=False, **kwargs):
 
 if __name__ == "__main__":
     input = torch.randn([32, 3, 256,256])
-    model = resnet34(False, num_classes=2, img_size=224)
+    model = resnet34(False, num_classes=2, img_size=256)
     output = model(input)
     print(output.size())
