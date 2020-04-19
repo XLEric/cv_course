@@ -23,7 +23,6 @@ import random
 所以，此方法经过计算后可以直接得到最终的ROC曲线。
 '''
 
-
 def randomcolor():
     colorArr = ['1','2','3','4','5','6','7','8','9','A','B','C','D','E','F']
     color = ""

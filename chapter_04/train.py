@@ -101,7 +101,7 @@ def tester(ops,epoch,model,criterion,
 def trainer(ops,f_log):
     try:
         os.environ['CUDA_VISIBLE_DEVICES'] = ops.GPUS
-        
+
         if ops.log_flag:
             sys.stdout = f_log
 
@@ -116,15 +116,15 @@ def trainer(ops,f_log):
         print('use model : %s'%(ops.model))
 
         if ops.model == 'resnet_18':
-            model_=resnet18(pretrained = ops.pretrained, num_classes=num_classes, img_size=ops.img_size[0],dropout_factor=ops.dropout)
+            model_=resnet18(pretrained = ops.pretrained, num_classes=ops.num_classes, img_size=ops.img_size[0],dropout_factor=ops.dropout)
         elif ops.model == 'resnet_34':
-            model_=resnet34(pretrained = ops.pretrained, num_classes=num_classes, img_size=ops.img_size[0],dropout_factor=ops.dropout)
+            model_=resnet34(pretrained = ops.pretrained, num_classes=ops.num_classes, img_size=ops.img_size[0],dropout_factor=ops.dropout)
         elif ops.model == 'resnet_50':
-            model_=resnet50(pretrained = ops.pretrained, num_classes=num_classes, img_size=ops.img_size[0],dropout_factor=ops.dropout)
+            model_=resnet50(pretrained = ops.pretrained, num_classes=ops.num_classes, img_size=ops.img_size[0],dropout_factor=ops.dropout)
         elif ops.model == 'resnet_101':
-            model_=resnet101(pretrained = ops.pretrained, num_classes=num_classes, img_size=ops.img_size[0],dropout_factor=ops.dropout)
+            model_=resnet101(pretrained = ops.pretrained, num_classes=ops.num_classes, img_size=ops.img_size[0],dropout_factor=ops.dropout)
         elif ops.model == 'resnet_152':
-            model_=resnet152(pretrained = ops.pretrained, num_classes=num_classes, img_size=ops.img_size[0],dropout_factor=ops.dropout)
+            model_=resnet152(pretrained = ops.pretrained, num_classes=ops.num_classes, img_size=ops.img_size[0],dropout_factor=ops.dropout)
         else:
             print('error no the struct model : {}'.format(ops.model))
 
@@ -194,6 +194,9 @@ def trainer(ops,f_log):
                         set_learning_rate(optimizer, init_lr)
                         flag_change_lr_cnt = 0
 
+            loss_mean = 0. # 损失均值
+            loss_idx = 0. # 损失计算计数器
+
             for i, (imgs_, labels_) in enumerate(dataloader):
 
                 if use_cuda:
@@ -260,6 +263,8 @@ if __name__ == "__main__":
         help = 'model_exp') # 模型输出文件夹
     parser.add_argument('--model', type=str, default = 'resnet_101',
         help = 'model : resnet_18,resnet_34,resnet_50,resnet_101,resnet_152') # 模型类型
+    parser.add_argument('--num_classes', type=int , default = 200,
+        help = 'num_classes') #  分类类别个数
     parser.add_argument('--GPUS', type=str, default = '0',
         help = 'GPUS') # GPU选择
     parser.add_argument('--train_path', type=str, default = './datasets/train_datasets/',
@@ -294,7 +299,7 @@ if __name__ == "__main__":
         help = 'data_augmentation') # 训练数据生成器是否进行数据扩增
     parser.add_argument('--fix_res', type=bool , default = True,
         help = 'fix_resolution') # 输入模型样本图片是否保证图像分辨率的长宽比
-    parser.add_argument('--clear_model_exp', type=bool, default = True,
+    parser.add_argument('--clear_model_exp', type=bool, default = False,
         help = 'clear_model_exp') # 模型输出文件夹是否进行清除
     parser.add_argument('--log_flag', type=bool, default = False,
         help = 'log flag') # 是否保存训练 log

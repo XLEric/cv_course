@@ -166,7 +166,7 @@ def p_r(ops):
     plt.ylabel('Precision', fontsize=13)
     plt.grid(b=True, ls=':')
     plt.legend(loc='lower right', fancybox=True, framealpha=0.8, fontsize=12)
-    plt.title(u'AVE P-R_nultiLabel', fontsize=17)
+    plt.title(u'AVE P-R_multiLabel', fontsize=17)
     plt.show()
 
     fig.tight_layout()
@@ -305,7 +305,7 @@ def p_r(ops):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=' ROC ')
-    parser.add_argument('--file', type=str, default = './roc_metrics_2020-04-15_11-42-06.json',
+    parser.add_argument('--file', type=str, default = './roc_metrics_2020-04-19_22-53-34.json',
         help = 'file') # 分析文件路径
     parser.add_argument('--num_classes', type=int, default = 200,
         help = 'num_classes') # 分类类别

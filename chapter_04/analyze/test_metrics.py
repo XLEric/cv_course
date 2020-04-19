@@ -26,8 +26,6 @@ def test(ops,timestamp):
     os.environ['CUDA_VISIBLE_DEVICES'] = ops.GPUS
 
     test_path =  ops.test_path
-    num_classes = len(os.listdir(ops.test_path)) # 模型类别个数
-    print('num_classes : ',num_classes)
     #---------------------------------------------------------------- 构建模型
     print('use model : %s'%(ops.model))
 
@@ -151,12 +149,12 @@ def test(ops,timestamp):
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description=' Project Classification Test')
-    parser.add_argument('--test_model', type=str, default = './model_s152256_dir/model_epoch-1536.pth',
+    parser.add_argument('--test_model', type=str, default = './model_exp/2020-04-19_20-14-21/model_epoch-93.pth',
         help = 'test_model') # 模型路径
-    parser.add_argument('--model', type=str, default = 'resnet_152',
+    parser.add_argument('--model', type=str, default = 'resnet_101',
         help = 'model : resnet_18,resnet_34,resnet_50,resnet_101,resnet_152') # 模型类型
-    parser.add_argument('--num_class', type=int , default = 200,
-        help = 'num_class') #  分类类别个数
+    parser.add_argument('--num_classes', type=int , default = 200,
+        help = 'num_classes') #  分类类别个数
     parser.add_argument('--GPUS', type=str, default = '0',
         help = 'GPUS') # GPU选择
     parser.add_argument('--test_path', type=str, default = './datasets/test_datasets/',
@@ -184,7 +182,8 @@ if __name__ == "__main__":
 
     loc_time_str = time.strftime("%Y-%m-%d_%H-%M-%S", loc_time)
 
-    dict_metrics = test(ops = args,timestamp = loc_time_str)
+    with torch.no_grad():
+        dict_metrics = test(ops = args,timestamp = loc_time_str)
 
     unparsed['metrics'] = dict_metrics
     fs = open('test_{}.json'.format(loc_time_str),"w",encoding='utf-8')

@@ -24,12 +24,12 @@ from models.resnet import resnet18, resnet34, resnet50, resnet101, resnet152
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description=' Project Classification Test')
-    parser.add_argument('--test_model', type=str, default = './model_s152256_dir/model_epoch-1536.pth',
+    parser.add_argument('--test_model', type=str, default = './model_exp/2020-04-19_20-14-21/model_epoch-93.pth',
         help = 'test_model') # 模型路径
-    parser.add_argument('--model', type=str, default = 'resnet_152',
+    parser.add_argument('--model', type=str, default = 'resnet_101',
         help = 'model : resnet_18,resnet_34,resnet_50,resnet_101,resnet_152') # 模型类型
-    parser.add_argument('--num_class', type=int , default = 200,
-        help = 'num_class') #  分类类别个数
+    parser.add_argument('--num_classes', type=int , default = 200,
+        help = 'num_classes') #  分类类别个数
     parser.add_argument('--GPUS', type=str, default = '0',
         help = 'GPUS') # GPU选择
     parser.add_argument('--test_path', type=str, default = './example/',
@@ -55,8 +55,7 @@ if __name__ == "__main__":
     os.environ['CUDA_VISIBLE_DEVICES'] = ops.GPUS
 
     test_path =  ops.test_path # 测试图片文件夹路径
-    num_classes = ops.num_class # 模型类别个数
-    print('num_classes : ',num_classes)
+
     #---------------------------------------------------------------- 构建模型
     print('use model : %s'%(ops.model))
 
@@ -90,50 +89,51 @@ if __name__ == "__main__":
 
     #---------------------------------------------------------------- 预测图片
     font = cv2.FONT_HERSHEY_SIMPLEX
-    for file in os.listdir(ops.test_path):
-        gt_label = file.split('_label_')[-1].strip('.jpg')
-        print('------>>> {} - gt_label : {}'.format(file,gt_label))
+    with torch.no_grad():
+        for file in os.listdir(ops.test_path):
+            gt_label = file.split('_label_')[-1].strip('.jpg')
+            print('------>>> {} - gt_label : {}'.format(file,gt_label))
 
-        img = cv2.imread(ops.test_path + file)
-        # 输入图片预处理
-        if ops.fix_res:
-            img_ = letterbox(img,size_=ops.img_size[0],mean_rgb = (128,128,128))
-        else:
-            img_ = cv2.resize(img, (ops.img_size[1],ops.img_size[0]), interpolation = cv2.INTER_CUBIC)
-        if ops.vis:
+            img = cv2.imread(ops.test_path + file)
+            # 输入图片预处理
+            if ops.fix_res:
+                img_ = letterbox(img,size_=ops.img_size[0],mean_rgb = (128,128,128))
+            else:
+                img_ = cv2.resize(img, (ops.img_size[1],ops.img_size[0]), interpolation = cv2.INTER_CUBIC)
+            if ops.vis:
+                cv2.namedWindow('image',0)
+                cv2.imshow('image',img_)
+                cv2.waitKey(1)
+            img_ = img_.astype(np.float32)
+            img_ = (img_-128.)/256.
+
+            img_ = img_.transpose(2, 0, 1)
+            img_ = torch.from_numpy(img_)
+            img_ = img_.unsqueeze_(0)
+
+            if use_cuda:
+                img_ = img_.cuda()  # (bs, 3, h, w)
+
+            pre_ = model_(img_.float())
+
+            outputs = F.softmax(pre_,dim = 1)
+            outputs = outputs[0]
+
+            output = outputs.cpu().detach().numpy()
+            output = np.array(output)
+
+            max_index = np.argmax(output)
+
+            score_ = output[max_index]
+
+            print('gt {} -- pre {} : {}'.format(gt_label,max_index,score_))
+            show_str = 'gt {} - pre {} :{:.2f}'.format(gt_label,max_index,score_)
+            cv2.putText(img,show_str,(3,img.shape[0]-10),font,0.45,(15,125,255),3)
+            cv2.putText(img,show_str,(3,img.shape[0]-10),font,0.45,(225,155,55),1)
+
             cv2.namedWindow('image',0)
-            cv2.imshow('image',img_)
-            cv2.waitKey(1)
-        img_ = img_.astype(np.float32)
-        img_ = (img_-128.)/256.
-
-        img_ = img_.transpose(2, 0, 1)
-        img_ = torch.from_numpy(img_)
-        img_ = img_.unsqueeze_(0)
-
-        if use_cuda:
-            img_ = img_.cuda()  # (bs, 3, h, w)
-
-        pre_ = model_(img_.float())
-
-        outputs = F.softmax(pre_,dim = 1)
-        outputs = outputs[0]
-
-        output = outputs.cpu().detach().numpy()
-        output = np.array(output)
-
-        max_index = np.argmax(output)
-
-        score_ = output[max_index]
-
-        print('gt {} -- pre {} : {}'.format(gt_label,max_index,score_))
-        show_str = 'gt {} - pre {} :{:.2f}'.format(gt_label,max_index,score_)
-        cv2.putText(img,show_str,(3,img.shape[0]-10),font,0.45,(15,125,255),3)
-        cv2.putText(img,show_str,(3,img.shape[0]-10),font,0.45,(225,155,55),1)
-
-        cv2.namedWindow('image',0)
-        cv2.imshow('image',img)
-        cv2.waitKey(0)
+            cv2.imshow('image',img)
+            cv2.waitKey(0)
 
     cv2.destroyAllWindows()
 

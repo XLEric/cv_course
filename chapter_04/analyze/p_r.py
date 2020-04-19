@@ -196,13 +196,9 @@ def p_r(ops):
 
     print('\n mAP : {}, mRECALL : {}'.format(np.mean(p_a),np.mean(r_a)))
 
-
-
-
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=' ROC ')
-    parser.add_argument('--file', type=str, default = './roc_metrics_2020-04-15_11-42-06.json',
+    parser.add_argument('--file', type=str, default = './roc_metrics_2020-04-20_00-12-24.json',
         help = 'file') # 分析文件路径
     parser.add_argument('--num_classes', type=int, default = 200,
         help = 'num_classes') # 分类类别
