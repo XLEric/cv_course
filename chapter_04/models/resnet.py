@@ -96,6 +96,7 @@ class ResNet(nn.Module):
 
     def __init__(self, block, layers, num_classes=1000, img_size=224,dropout_factor = 0.5):
         self.inplanes = 64
+        self.dropout_factor = dropout_factor
         super(ResNet, self).__init__()
         # 26
         # 586 train_sequence
@@ -115,7 +116,7 @@ class ResNet(nn.Module):
         pool_kernel = int(img_size / 32)
         self.avgpool = nn.AvgPool2d(pool_kernel, stride=1, ceil_mode=True)
 
-        self.dropout = nn.Dropout(dropout_factor)
+        self.dropout = nn.Dropout(self.dropout_factor)
 
         self.fc = nn.Linear(512 * block.expansion, num_classes)
 
@@ -157,8 +158,9 @@ class ResNet(nn.Module):
 
         x = self.avgpool(x)
         x = x.view(x.size(0), -1)
+        
         x = self.dropout(x)
-        # print(x.size())
+
         x = self.fc(x)
 
         return x
