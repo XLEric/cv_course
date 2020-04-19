@@ -170,7 +170,7 @@ if __name__ == "__main__":
         help = 'imageNet_Pretrain') # 初始化学习率
     parser.add_argument('--fintune_model', type=str, default = 'None',
         help = 'fintune_model') # fintune model
-    parser.add_argument('--loss_define', type=str, default = True,
+    parser.add_argument('--loss_define', type=str, default = 'focalLoss',
         help = 'define_loss') # 损失函数定义
     parser.add_argument('--init_lr', type=float, default = 1e-3,
         help = 'init_learningRate') # 初始化学习率
