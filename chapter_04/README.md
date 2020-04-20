@@ -11,9 +11,9 @@
 * 2、将下载数据集压缩包 CUB_200_2011.tgz 在datasets文件夹下解压。  
 * 3、在 chapter_04 根目录下运行命令： python utils/make_train_test_datasets.py ，制作数据集，会在 datasets 文件夹下生成 train_datasets（训练集），test_datasets（测试集）两个文件夹。制作数据的默认模式为目标crop标注边界框（bounding box 简称 bbox）区域，去除了背景，如下图bbox区域。  
 
-![sample_1](https://github.com/XiangLiK/cv_course/raw/master/chapter_04/samples/sample_1.png)  
-crop模式样本,如下图:  
-![sample_3](https://github.com/XiangLiK/cv_course/raw/master/chapter_04/samples/sample_3.png)  
+  ![sample_1](https://github.com/XiangLiK/cv_course/raw/master/chapter_04/samples/sample_1.png)  
+  crop模式样本,如下图:  
+  ![sample_3](https://github.com/XiangLiK/cv_course/raw/master/chapter_04/samples/sample_3.png)  
 
 * 4、模型训练，在 chapter_04 根目录下运行命令：python train.py  
   * A) 建议仔细阅读 train.py 接口参数注释。
