@@ -149,7 +149,7 @@ def test(ops,timestamp):
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description=' Project Classification Test')
-    parser.add_argument('--test_model', type=str, default = './model_exp/2020-04-19_20-14-21/model_epoch-93.pth',
+    parser.add_argument('--test_model', type=str, default = './model_exp/2020-04-20_14-42-25/model_epoch-123.pth',
         help = 'test_model') # 模型路径
     parser.add_argument('--model', type=str, default = 'resnet_101',
         help = 'model : resnet_18,resnet_34,resnet_50,resnet_101,resnet_152') # 模型类型
