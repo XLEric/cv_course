@@ -124,5 +124,7 @@ def face_random_rotate(image , pts,angle ,Eye_Left,Eye_Right,fix_res= True,img_s
 
     if fix_res:
         crop_rot = letterbox(crop_rot,img_size=img_size[0],mean_rgb = (128,128,128))
+    else:
+        crop_rot = cv2.resize(crop_rot, img_size, interpolation = cv2.INTER_LINEAR)
 
     return crop_rot,crop_pts
