@@ -6,7 +6,7 @@ import cv2 # 加载OpenCV库
 import argparse # 加载处理命令行参数库
 import shutil
 import json
-from common_utils import *
+from utils.common_utils import *
 
 if __name__ == "__main__":
 

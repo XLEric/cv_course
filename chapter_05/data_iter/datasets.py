@@ -16,10 +16,7 @@ import numpy as np
 import torch
 from torch.utils.data import Dataset
 from torch.utils.data import DataLoader
-# import json
-# from support.alignment_aug import *
 
-flag_debug = False
 # 非形变处理
 def letterbox(img_,size_=416,mean_rgb = (128,128,128)):
 
