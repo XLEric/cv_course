@@ -10,6 +10,7 @@ import numpy as np
 import sys
 sys.path.append('./')
 from data_iter.data_agu import *
+from utils.common_utils import *
 import random
 
 def refine_face_bbox(landmarks,img_shape):
@@ -50,6 +51,11 @@ if __name__ == "__main__":
     parser.add_argument('--test_list', type=str,
         default = './datasets/WFLW_annotations/list_98pt_rect_attr_train_test/list_98pt_rect_attr_test.txt',
         help = 'annotations_test_list')# 测试集标注信息
+    parser.add_argument('--test_datasets', type=str,
+        default = './datasets/test_datasets/',
+        help = 'test_datasets')# 测试集标注信息
+
+
     parser.add_argument('--img_size', type=tuple , default = (256,256),
         help = 'img_size') # 输入模型图片尺寸
     parser.add_argument('--fix_res', type=bool , default = False,
@@ -65,7 +71,9 @@ if __name__ == "__main__":
     for key in unparsed.keys():
         print('{} : {}'.format(key,unparsed[key]))
 
-    r_ = open(args.train_list,'r')
+    mkdir_(args.test_datasets)
+
+    r_ = open(args.test_list,'r')
     lines = r_.readlines()
 
     idx = 0
@@ -81,11 +89,31 @@ if __name__ == "__main__":
 
         img = cv2.imread(args.images_path+img_file)
 
+
+
         pts = []
         for i in range(int(len(landmarks)/2)):
             x = float(landmarks[i*2+0])
             y = float(landmarks[i*2+1])
             pts.append([x,y])
+
+        test_crop  = img[int(bbox[1]):int(bbox[3]),int(bbox[0]):int(bbox[2]),:]
+
+        dict_test = {}
+        dict_test['pts'] = []
+        for i in range(int(len(landmarks)/2)):
+            x = float(landmarks[i*2+0])
+            y = float(landmarks[i*2+1])
+            dict_test['pts'].append([x-int(bbox[0]),y-int(bbox[1])])
+        img_name = img_file.split('/')[-1]
+
+        cv2.imwrite(args.test_datasets+img_name,test_crop)
+
+        fs = open(args.test_datasets+ img_name.replace('.jpg','.json'),"w",encoding='utf-8')
+        json.dump(dict_test,fs,ensure_ascii=False,indent = 1,cls = JSON_Encoder)
+        fs.close()
+
+
 
         refine_bbox = refine_face_bbox(pts,(img.shape[0],img.shape[1]))
 

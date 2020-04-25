@@ -1,5 +1,5 @@
 #-*-coding:utf-8-*-
-# date:2020-04-11
+# date:2020-04-24
 # Author: xiang li
 
 import os
@@ -15,7 +15,7 @@ from utils.common_utils import *
 from data_iter.datasets import *
 
 from models.resnet import resnet18, resnet34, resnet50, resnet101, resnet152
-
+from loss.loss import *
 import cv2
 import time
 import json
@@ -99,7 +99,7 @@ from datetime import datetime
 
 
 def trainer(ops,f_log):
-    if 1:
+    try:
         os.environ['CUDA_VISIBLE_DEVICES'] = ops.GPUS
 
         if ops.log_flag:
@@ -154,7 +154,8 @@ def trainer(ops,f_log):
 
         print('/**********************************************/')
         # 损失函数
-        criterion = nn.MSELoss(reduce=True, reduction='mean')
+        if ops.loss_define != 'wing_loss':
+            criterion = nn.MSELoss(reduce=True, reduction='mean')
 
         step = 0
         idx = 0
@@ -196,8 +197,10 @@ def trainer(ops,f_log):
                     pts_ = pts_.cuda()
 
                 output = model_(imgs_.float())
-
-                loss = criterion(output, pts_.float())
+                if ops.loss_define == 'wing_loss':
+                    loss = got_total_wing_loss(output, pts_.float())
+                else:
+                    loss = criterion(output, pts_.float())
                 loss_mean += loss.item()
                 loss_idx += 1.
                 if i%10 == 0:
@@ -206,7 +209,7 @@ def trainer(ops,f_log):
                     'loss : %.6f - %.6f'%(loss_mean/loss_idx,loss.item()),\
                     ' lr : %.5f'%init_lr,' bs :',ops.batch_size,\
                     ' img_size: %s x %s'%(ops.img_size[0],ops.img_size[1]),' best_loss: %.4f'%best_loss)
-                    # time.sleep(1)
+                    time.sleep(5)
                     # writer.add_scalar('data/loss', loss, step)
                     # writer.add_scalars('data/scalar_group', {'acc':acc,'lr':init_lr,'baseline':0.}, step)
 
@@ -219,8 +222,8 @@ def trainer(ops,f_log):
                 step += 1
 
                 # 一个 epoch 保存连词最新的 模型
-                if i%(int(dataset.__len__()/ops.batch_size/2-1)) == 0 and i > 0:
-                    torch.save(model_.state_dict(), ops.model_exp + 'latest.pth')
+                # if i%(int(dataset.__len__()/ops.batch_size/2-1)) == 0 and i > 0:
+                #     torch.save(model_.state_dict(), ops.model_exp + 'latest.pth')
             # 每一个 epoch 进行模型保存
             torch.save(model_.state_dict(), ops.model_exp + 'model_epoch-{}.pth'.format(epoch))
 
@@ -240,10 +243,10 @@ def trainer(ops,f_log):
                 json.dump(epochs_loss_dict,f_loss,ensure_ascii=False,indent = 1,cls = JSON_Encoder)
                 f_loss.close()
 
-    # except Exception as e:
-    #     print('Exception : ',e) # 打印异常
-    #     print('Exception  file : ', e.__traceback__.tb_frame.f_globals['__file__'])# 发生异常所在的文件
-    #     print('Exception  line : ', e.__traceback__.tb_lineno)# 发生异常所在的行数
+    except Exception as e:
+        print('Exception : ',e) # 打印异常
+        print('Exception  file : ', e.__traceback__.tb_frame.f_globals['__file__'])# 发生异常所在的文件
+        print('Exception  line : ', e.__traceback__.tb_lineno)# 发生异常所在的行数
 
 if __name__ == "__main__":
 
@@ -256,7 +259,7 @@ if __name__ == "__main__":
         help = 'model : resnet_18,resnet_34,resnet_50,resnet_101,resnet_152') # 模型类型
     parser.add_argument('--num_classes', type=int , default = 196,
         help = 'num_classes') #  landmarks 个数*2
-    parser.add_argument('--GPUS', type=str, default = '0',
+    parser.add_argument('--GPUS', type=str, default = '6',
         help = 'GPUS') # GPU选择
 
     parser.add_argument('--images_path', type=str, default = './datasets/WFLW_images/',
@@ -275,9 +278,9 @@ if __name__ == "__main__":
         help = 'test_interval') # 训练集和测试集 计算 loss 间隔
     parser.add_argument('--pretrained', type=bool, default = True,
         help = 'imageNet_Pretrain') # 初始化学习率
-    parser.add_argument('--fintune_model', type=str, default = 'None',
+    parser.add_argument('--fintune_model', type=str, default = './model_exp/2020-04-25_14-48-25/model_epoch-1.pth',
         help = 'fintune_model') # fintune model
-    parser.add_argument('--loss_define', type=str, default = 'Loss',
+    parser.add_argument('--loss_define', type=str, default = 'wing_loss',
         help = 'define_loss') # 损失函数定义
     parser.add_argument('--init_lr', type=float, default = 1e-3,
         help = 'init_learningRate') # 初始化学习率
@@ -299,7 +302,7 @@ if __name__ == "__main__":
         help = 'data_augmentation') # 训练数据生成器是否进行数据扩增
     parser.add_argument('--fix_res', type=bool , default = False,
         help = 'fix_resolution') # 输入模型样本图片是否保证图像分辨率的长宽比
-    parser.add_argument('--clear_model_exp', type=bool, default = True,
+    parser.add_argument('--clear_model_exp', type=bool, default = False,
         help = 'clear_model_exp') # 模型输出文件夹是否进行清除
     parser.add_argument('--log_flag', type=bool, default = False,
         help = 'log flag') # 是否保存训练 log
