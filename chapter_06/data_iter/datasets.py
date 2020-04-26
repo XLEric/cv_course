@@ -84,7 +84,7 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
             left_eye = np.average(pts[60:68], axis=0)
             right_eye = np.average(pts[68:76], axis=0)
 
-            angle_random = random.randint(-25,25)
+            angle_random = random.randint(-22,22)
             # 返回 crop 图 和 归一化 landmarks
             img_, landmarks_  = face_random_rotate(img, pts, angle_random, left_eye, right_eye,
                 fix_res = self.fix_res,img_size = self.img_size,vis = False)
@@ -113,6 +113,10 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
                 img_hsv[:,:,0] =np.maximum(img_hsv[:,:,0],0)
                 img_hsv[:,:,0] =np.minimum(img_hsv[:,:,0],180)#范围 0 ~180
                 img=cv2.cvtColor(img_hsv,cv2.COLOR_HSV2BGR)
+
+        if self.flag_agu == True:
+            if random.randint(0,15)==1:
+                img = img_agu_channel_same(img)
 
         # cv2.namedWindow('crop',0)
         # cv2.imshow('crop',img_)

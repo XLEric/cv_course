@@ -14,9 +14,9 @@ flip_landmarks_dict = {
     51:51,52:52,53:53,54:54,
     55:59,56:58,57:57,58:56,59:55,
     76:82,77:81,78:80,79:79,80:78,81:77,82:76,
-    87:83,86:84,85:85,84:86,82:87,
+    87:83,86:84,85:85,84:86,83:87,
     88:92,89:91,90:90,91:89,92:88,
-    95:93,94:84,93:95
+    95:93,94:94,93:95
     }
 # 非形变处理
 def letterbox(img_,img_size=256,mean_rgb = (128,128,128)):
@@ -50,6 +50,15 @@ def letterbox(img_,img_size=256,mean_rgb = (128,128,128)):
 #     coords[:, :4] = torch.clamp(coords[:, :4], min=0)# 夹紧区间最小值不为负数
 #     return coords
 
+def img_agu_channel_same(img_):
+    img_a = np.zeros(img_.shape, dtype = np.uint8)
+    gray = cv2.cvtColor(img_,cv2.COLOR_RGB2GRAY)
+    img_a[:,:,0] =gray
+    img_a[:,:,1] =gray
+    img_a[:,:,2] =gray
+
+    return img_a
+
 # 图像旋转
 def face_random_rotate(image , pts,angle ,Eye_Left,Eye_Right,fix_res= True,img_size=(256,256),vis = False):
     cx,cy = (Eye_Left[0] + Eye_Right[0]) / 2,(Eye_Left[1] + Eye_Right[1]) / 2
@@ -68,7 +77,10 @@ def face_random_rotate(image , pts,angle ,Eye_Left,Eye_Right,fix_res= True,img_s
     M[0 , 2] += int(0.5 * nW) - cx
     M[1 , 2] += int(0.5 * nH) - cy
 
-    img_rot = cv2.warpAffine(image , M , (nW , nH),flags=cv2.INTER_LINEAR)
+
+    resize_model = [cv2.INTER_LINEAR,cv2.INTER_CUBIC,cv2.INTER_NEAREST,cv2.INTER_AREA,cv2.INTER_LANCZOS4]
+
+    img_rot = cv2.warpAffine(image , M , (nW , nH),flags=resize_model[random.randint(0,4)])
     #flags : INTER_LINEAR INTER_CUBIC INTER_NEAREST
     #borderMode : BORDER_REFLECT BORDER_TRANSPARENT BORDER_REPLICATE CV_BORDER_WRAP BORDER_CONSTANT
 
@@ -115,6 +127,20 @@ def face_random_rotate(image , pts,angle ,Eye_Left,Eye_Right,fix_res= True,img_s
         x = pt[0]
         y = pt[1]
         crop_pts.append([float(x-x1)/width_crop,float(y-y1)/height_crop]) # 归一化
+
+    # 随机镜像
+    if random.randint(0,1) == 0:
+        # print('--------->>> flip')
+        crop_rot = cv2.flip(crop_rot,1)
+        crop_pts_flip = []
+        for i in range(len(crop_pts)):
+            # print( crop_rot.shape[1],crop_pts[flip_landmarks_dict[i]][0])
+            x = 1. - crop_pts[flip_landmarks_dict[i]][0]
+            y = crop_pts[flip_landmarks_dict[i]][1]
+            # print(i,x,y)
+            crop_pts_flip.append([x,y])
+        crop_pts = crop_pts_flip
+
     if vis:
         for pt in crop_pts:
             x = int(pt[0]*width_crop)
@@ -125,6 +151,6 @@ def face_random_rotate(image , pts,angle ,Eye_Left,Eye_Right,fix_res= True,img_s
     if fix_res:
         crop_rot = letterbox(crop_rot,img_size=img_size[0],mean_rgb = (128,128,128))
     else:
-        crop_rot = cv2.resize(crop_rot, img_size, interpolation = cv2.INTER_LINEAR)
+        crop_rot = cv2.resize(crop_rot, img_size, interpolation = resize_model[random.randint(0,4)])
 
     return crop_rot,crop_pts

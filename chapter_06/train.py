@@ -144,7 +144,7 @@ def trainer(ops,f_log):
                                 drop_last = True)
         # 优化器设计
         # optimizer_Adam = torch.optim.Adam(model_.parameters(), lr=init_lr, betas=(0.9, 0.99),weight_decay=1e-6)
-        optimizer_SGD = optim.SGD(model_.parameters(), lr=ops.init_lr, momentum=0.9, weight_decay=ops.weight_decay)# 优化器初始化
+        optimizer_SGD = optim.SGD(model_.parameters(), lr=ops.init_lr, momentum=ops.momentum, weight_decay=ops.weight_decay)# 优化器初始化
         optimizer = optimizer_SGD
         # 加载 finetune 模型
         if os.access(ops.fintune_model,os.F_OK):# checkpoint
@@ -209,7 +209,7 @@ def trainer(ops,f_log):
                     'loss : %.6f - %.6f'%(loss_mean/loss_idx,loss.item()),\
                     ' lr : %.5f'%init_lr,' bs :',ops.batch_size,\
                     ' img_size: %s x %s'%(ops.img_size[0],ops.img_size[1]),' best_loss: %.4f'%best_loss)
-                    time.sleep(5)
+                    # time.sleep(7)
                     # writer.add_scalar('data/loss', loss, step)
                     # writer.add_scalars('data/scalar_group', {'acc':acc,'lr':init_lr,'baseline':0.}, step)
 
@@ -278,7 +278,7 @@ if __name__ == "__main__":
         help = 'test_interval') # 训练集和测试集 计算 loss 间隔
     parser.add_argument('--pretrained', type=bool, default = True,
         help = 'imageNet_Pretrain') # 初始化学习率
-    parser.add_argument('--fintune_model', type=str, default = './model_exp/2020-04-25_14-48-25/model_epoch-1.pth',
+    parser.add_argument('--fintune_model', type=str, default = 'None',
         help = 'fintune_model') # fintune model
     parser.add_argument('--loss_define', type=str, default = 'wing_loss',
         help = 'define_loss') # 损失函数定义
@@ -286,9 +286,11 @@ if __name__ == "__main__":
         help = 'init_learningRate') # 初始化学习率
     parser.add_argument('--lr_decay', type=float, default = 0.96,
         help = 'learningRate_decay') # 学习率权重衰减率
-    parser.add_argument('--weight_decay', type=float, default = 1e-8,
+    parser.add_argument('--weight_decay', type=float, default = 5e-4,
         help = 'weight_decay') # 优化器正则损失权重
-    parser.add_argument('--batch_size', type=int, default = 16,
+    parser.add_argument('--momentum', type=float, default = 0.9,
+        help = 'momentum') # 优化器动量
+    parser.add_argument('--batch_size', type=int, default = 8,
         help = 'batch_size') # 训练每批次图像数量
     parser.add_argument('--dropout', type=float, default = 0.5,
         help = 'dropout') # dropout

@@ -20,19 +20,23 @@ import cv2
 import torch.nn.functional as F
 
 from models.resnet import resnet18, resnet34, resnet50, resnet101, resnet152
+from utils.common_utils import *
 
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description=' Project Classification Test')
-    parser.add_argument('--test_model', type=str, default = './model_exp/2020-04-25_15-01-31/model_epoch-1.pth',
+    # 2020-04-26_11-44-41
+    # 2020-04-26_20-52-27
+    # 2020-04-26_21-32-51
+    parser.add_argument('--test_model', type=str, default = './model_exp/2020-04-26_21-32-51/model_epoch-133.pth',
         help = 'test_model') # 模型路径
-    parser.add_argument('--model', type=str, default = 'resnet_50',
+    parser.add_argument('--model', type=str, default = 'resnet_18',
         help = 'model : resnet_18,resnet_34,resnet_50,resnet_101,resnet_152') # 模型类型
     parser.add_argument('--num_classes', type=int , default = 196,
         help = 'num_classes') #  分类类别个数
     parser.add_argument('--GPUS', type=str, default = '0',
         help = 'GPUS') # GPU选择
-    parser.add_argument('--test_path', type=str, default = './datasets/test_datasets/',
+    parser.add_argument('--test_path', type=str, default = './datasets/test_expand_datasets/',
         help = 'test_path') # 测试集路径
     parser.add_argument('--img_size', type=tuple , default = (256,256),
         help = 'img_size') # 输入模型图片尺寸
@@ -89,11 +93,12 @@ if __name__ == "__main__":
     #---------------------------------------------------------------- 预测图片
     font = cv2.FONT_HERSHEY_SIMPLEX
     with torch.no_grad():
+        idx = 0
         for file in os.listdir(ops.test_path):
-
-            # print('------>>> {} - gt_label : {}'.format(file,gt_label))
             if '.jpg' not in file:
                 continue
+            idx += 1
+            print('{}) image : {}'.format(idx,file))
             img = cv2.imread(ops.test_path + file)
             img_width = img.shape[1]
             img_height = img.shape[0]
@@ -102,10 +107,7 @@ if __name__ == "__main__":
                 img_ = letterbox(img,size_=ops.img_size[0],mean_rgb = (128,128,128))
             else:
                 img_ = cv2.resize(img, (ops.img_size[1],ops.img_size[0]), interpolation = cv2.INTER_CUBIC)
-            if ops.vis:
-                cv2.namedWindow('image',0)
-                cv2.imshow('image',img_)
-                cv2.waitKey(1)
+
             img_ = img_.astype(np.float32)
             img_ = (img_-128.)/256.
 
@@ -117,17 +119,13 @@ if __name__ == "__main__":
                 img_ = img_.cuda()  # (bs, 3, h, w)
 
             pre_ = model_(img_.float())
-            print(pre_.size())
+            # print(pre_.size())
             output = pre_.cpu().detach().numpy()
             output = np.squeeze(output)
-            print(output.shape)
+            # print(output.shape)
+            dict_landmarks = draw_landmarks(img,output,draw_circle = False)
 
-
-            for i in range(int(output.shape[0]/2)):
-                x = output[i*2+0]*float(img_width)
-                y = output[i*2+1]*float(img_height)
-
-                cv2.circle(img, (int(x),int(y)), 2, (255,0,255),-1)
+            draw_contour(img,dict_landmarks)
 
             #
             # outputs = F.softmax(pre_,dim = 1)
@@ -144,10 +142,11 @@ if __name__ == "__main__":
             # show_str = 'gt {} - pre {} :{:.2f}'.format(gt_label,max_index,score_)
             # cv2.putText(img,show_str,(3,img.shape[0]-10),font,0.45,(15,125,255),3)
             # cv2.putText(img,show_str,(3,img.shape[0]-10),font,0.45,(225,155,55),1)
-
-            cv2.namedWindow('image',0)
-            cv2.imshow('image',img)
-            cv2.waitKey(0)
+            if ops.vis:
+                cv2.namedWindow('image',0)
+                cv2.imshow('image',img)
+                if cv2.waitKey(10) == 27 :
+                    break
 
     cv2.destroyAllWindows()
 
