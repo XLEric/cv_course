@@ -15,6 +15,7 @@ from utils.common_utils import *
 from data_iter.datasets import *
 
 from models.resnet import resnet18, resnet34, resnet50, resnet101, resnet152
+from models.mobilenetv2 import MobileNetV2
 from loss.loss import *
 import cv2
 import time
@@ -119,10 +120,10 @@ def trainer(ops,f_log):
             model_=resnet101(pretrained = ops.pretrained, num_classes=ops.num_classes, img_size=ops.img_size[0],dropout_factor=ops.dropout)
         elif ops.model == 'resnet_152':
             model_=resnet152(pretrained = ops.pretrained, num_classes=ops.num_classes, img_size=ops.img_size[0],dropout_factor=ops.dropout)
+        elif ops.model == 'mobilenetv2':
+            model_=MobileNetV2(n_class =ops.num_classes, input_size=ops.img_size[0],dropout_factor=ops.dropout)
         else:
             print('error no the struct model : {}'.format(ops.model))
-
-        print('model_.fc : {}'.format(model_.fc))
 
 
         use_cuda = torch.cuda.is_available()
@@ -182,7 +183,7 @@ def trainer(ops,f_log):
                 else:
                     flag_change_lr_cnt += 1
 
-                    if flag_change_lr_cnt > 5:
+                    if flag_change_lr_cnt > 10:
                         init_lr = init_lr*ops.lr_decay
                         set_learning_rate(optimizer, init_lr)
                         flag_change_lr_cnt = 0
@@ -255,8 +256,8 @@ if __name__ == "__main__":
         help = 'seed') # 设置随机种子
     parser.add_argument('--model_exp', type=str, default = './model_exp',
         help = 'model_exp') # 模型输出文件夹
-    parser.add_argument('--model', type=str, default = 'resnet_50',
-        help = 'model : resnet_18,resnet_34,resnet_50,resnet_101,resnet_152') # 模型类型
+    parser.add_argument('--model', type=str, default = 'mobilenetv2',
+        help = 'model : resnet_18,resnet_34,resnet_50,resnet_101,resnet_152,mobilenetv2') # 模型类型
     parser.add_argument('--num_classes', type=int , default = 196,
         help = 'num_classes') #  landmarks 个数*2
     parser.add_argument('--GPUS', type=str, default = '6',
@@ -294,7 +295,7 @@ if __name__ == "__main__":
         help = 'batch_size') # 训练每批次图像数量
     parser.add_argument('--dropout', type=float, default = 0.5,
         help = 'dropout') # dropout
-    parser.add_argument('--epochs', type=int, default = 1000,
+    parser.add_argument('--epochs', type=int, default = 2000,
         help = 'epochs') # 训练周期
     parser.add_argument('--num_workers', type=int, default = 6,
         help = 'num_workers') # 训练数据生成器线程数

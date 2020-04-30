@@ -24,10 +24,10 @@ def refine_face_bbox(landmarks,img_shape):
     expand_w = (x2-x1)
     expand_h = (y2-y1)
 
-    # x1 -= expand_w*0.1
-    # y1 -= expand_h*0.3
-    # x2 += expand_w*0.1
-    # y2 += expand_h*0.1
+    x1 -= expand_w*0.1
+    y1 -= expand_h*0.3
+    x2 += expand_w*0.1
+    y2 += expand_h*0.05
 
     x1,y1,x2,y2 = int(x1),int(y1),int(x2),int(y2)
 
@@ -52,7 +52,7 @@ if __name__ == "__main__":
         default = './datasets/WFLW_annotations/list_98pt_rect_attr_train_test/list_98pt_rect_attr_test.txt',
         help = 'annotations_test_list')# 测试集标注信息
     parser.add_argument('--test_datasets', type=str,
-        default = './datasets/test_datasets/',
+        default = './datasets/test_expand_datasets/',
         help = 'test_datasets')# 测试集标注信息
 
 
@@ -77,6 +77,7 @@ if __name__ == "__main__":
     lines = r_.readlines()
 
     idx = 0
+    idx_save = 0
     for line in lines:
         # print(line)
         msg = line.strip().split(' ')
@@ -89,35 +90,56 @@ if __name__ == "__main__":
 
         img = cv2.imread(args.images_path+img_file)
 
-
-
         pts = []
         for i in range(int(len(landmarks)/2)):
             x = float(landmarks[i*2+0])
             y = float(landmarks[i*2+1])
             pts.append([x,y])
 
-        test_crop  = img[int(bbox[1]):int(bbox[3]),int(bbox[0]):int(bbox[2]),:]
+        refine_bbox = refine_face_bbox(pts,(img.shape[0],img.shape[1]))
+
+        img_crop = img.copy()[refine_bbox[1]:refine_bbox[3],refine_bbox[0]:refine_bbox[2],:]
+
+
+
+
+
+        #----------------------------------------------------------------------- save image
+        tx1,ty1,tx2,ty2 = int(bbox[0]),int(bbox[1]),int(bbox[2]),int(bbox[3])
+
+        expand_w = (tx2-tx1)
+        expand_h = (ty2-ty1)
+
+        tx1 -= expand_w*0.1
+        ty1 -= expand_h*0.2
+        tx2 += expand_w*0.1
+        ty2 += expand_h*0.05
+
+        tx1,ty1,tx2,ty2 = int(tx1),int(ty1),int(tx2),int(ty2)
+
+        tx1 = int(max(0,tx1))
+        ty1 = int(max(0,ty1))
+        tx2 = int(min(tx2,img.shape[1]-1))
+        ty2 = int(min(ty2,img.shape[0]-1))
+
+        test_crop  = img[ty1:ty2,tx1:tx2,:]
+
 
         dict_test = {}
         dict_test['pts'] = []
         for i in range(int(len(landmarks)/2)):
             x = float(landmarks[i*2+0])
             y = float(landmarks[i*2+1])
-            dict_test['pts'].append([x-int(bbox[0]),y-int(bbox[1])])
+            dict_test['pts'].append([x-tx1,y-ty1])
         img_name = img_file.split('/')[-1]
+        idx_save += 1
+        cv2.imwrite(args.test_datasets+'image_{}'.format(idx_save)+img_name,test_crop)
 
-        cv2.imwrite(args.test_datasets+img_name,test_crop)
-
-        fs = open(args.test_datasets+ img_name.replace('.jpg','.json'),"w",encoding='utf-8')
+        fs = open(args.test_datasets+ 'image_{}'.format(idx_save)+img_name.replace('.jpg','.json'),"w",encoding='utf-8')
         json.dump(dict_test,fs,ensure_ascii=False,indent = 1,cls = JSON_Encoder)
         fs.close()
 
-
-
-        refine_bbox = refine_face_bbox(pts,(img.shape[0],img.shape[1]))
-
-        img_crop = img.copy()[refine_bbox[1]:refine_bbox[3],refine_bbox[0]:refine_bbox[2],:]
+        #-----------------------------------------------------------------------
 
         left_eye = np.average(pts[60:68], axis=0)
         right_eye = np.average(pts[68:76], axis=0)
@@ -148,7 +170,7 @@ if __name__ == "__main__":
             cv2.imshow('rotate',img_rot)
             cv2.namedWindow('face_crop',0)
             cv2.imshow('face_crop',img_crop)
-            if cv2.waitKey(1) == 27:
+            if cv2.waitKey(100) == 27:
                 break
 
     if args.vis:

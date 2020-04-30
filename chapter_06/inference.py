@@ -20,6 +20,7 @@ import cv2
 import torch.nn.functional as F
 
 from models.resnet import resnet18, resnet34, resnet50, resnet101, resnet152
+from models.mobilenetv2 import MobileNetV2
 from utils.common_utils import *
 
 if __name__ == "__main__":
@@ -28,15 +29,16 @@ if __name__ == "__main__":
     # 2020-04-26_11-44-41
     # 2020-04-26_20-52-27
     # 2020-04-26_21-32-51
-    parser.add_argument('--test_model', type=str, default = './model_exp/2020-04-26_21-32-51/model_epoch-133.pth',
+    # 2020-04-29_01-02-01
+    parser.add_argument('--test_model', type=str, default = './model_exp/2020-04-29_01-02-01/model_epoch-1500.pth',
         help = 'test_model') # 模型路径
-    parser.add_argument('--model', type=str, default = 'resnet_18',
-        help = 'model : resnet_18,resnet_34,resnet_50,resnet_101,resnet_152') # 模型类型
+    parser.add_argument('--model', type=str, default = 'mobilenetv2',
+        help = 'model : resnet_18,resnet_34,resnet_50,resnet_101,resnet_152,mobilenetv2') # 模型类型
     parser.add_argument('--num_classes', type=int , default = 196,
         help = 'num_classes') #  分类类别个数
     parser.add_argument('--GPUS', type=str, default = '0',
         help = 'GPUS') # GPU选择
-    parser.add_argument('--test_path', type=str, default = './datasets/test_expand_datasets/',
+    parser.add_argument('--test_path', type=str, default = './datasets/test_datasets/',
         help = 'test_path') # 测试集路径
     parser.add_argument('--img_size', type=tuple , default = (256,256),
         help = 'img_size') # 输入模型图片尺寸
@@ -73,6 +75,8 @@ if __name__ == "__main__":
         model_=resnet101(num_classes=ops.num_classes, img_size=ops.img_size[0])
     elif ops.model == 'resnet_152':
         model_=resnet152(num_classes=ops.num_classes, img_size=ops.img_size[0])
+    elif ops.model == 'mobilenetv2':
+        model_=MobileNetV2(n_class =ops.num_classes, input_size=ops.img_size[0])
     else:
         print('error no the struct model : {}'.format(ops.model))
 
