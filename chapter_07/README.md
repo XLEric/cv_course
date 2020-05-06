@@ -1,6 +1,6 @@
 # 第7章  
 ## 章节介绍(Chapter Abstract)  
-* 人脸检测  
+* 人脸检测  Retinaface  
 ## 案例展示  
 * demo1  
 ![vedio1](https://github.com/XiangLiK/cv_course/raw/master/chapter_07/samples/Video_1.gif)  
