@@ -1,0 +1,16 @@
+cfg_model=yolo
+classes=1
+gpus = 0
+num_workers = 6
+batch_size = 6
+img_size = 416
+multi_scale = True
+epochs = 120
+train=./datasets_faces/anno/train.txt
+valid=./datasets_faces/anno/train.txt
+names=./cfg/voc_faces.names
+finetune_model=./finetune_model/kyolov3_coco.pt
+#finetune_model = ./weights-yolov3/latest.pt
+#finetune_model = ./finetune_model/kyolov3-tiny_coco.pt
+#finetune_model = ./weights-yolov3-tiny/latest.pt
+lr_step = 30,40,60
