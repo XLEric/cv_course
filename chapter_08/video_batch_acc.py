@@ -39,7 +39,7 @@ def get_faces_batch_landmarks(ops,landmarks_model,dets,img_raw,use_cuda,draw_bbo
             continue
         text = "{:.4f}".format(b[4])
         b = list(map(int, b))
-        if ((b[3]-b[1])*(b[2]-b[0]))<100:
+        if ((b[3]-b[1])*(b[2]-b[0]))<90:
             continue
         r_bbox = refine_face_bbox((b[0],b[1],b[2],b[3]),img_raw.shape)
         r_bboxes.append(r_bbox)
@@ -174,7 +174,7 @@ def demo(opt):
         str_fps = ('{:.2f} Fps'.format(1./(e_time-s_time)))
         cv2.putText(img, str_fps, (5,img.shape[0]-3),cv2.FONT_HERSHEY_DUPLEX, 0.9, (255, 0, 255),4)
         cv2.putText(img, str_fps, (5,img.shape[0]-3),cv2.FONT_HERSHEY_DUPLEX, 0.9, (255, 255, 0),1)
-
+        print(str_fps)
         img_s = np.hstack((img,img_))
         cv2.line(img_s,(int(img_s.shape[1]/2),0),(int(img_s.shape[1]/2),int(img_s.shape[0])),(25,90,255),20)
         cv2.line(img_s,(int(img_s.shape[1]/2),0),(int(img_s.shape[1]/2),int(img_s.shape[0])),(120,120,120),8)
