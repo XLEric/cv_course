@@ -21,7 +21,7 @@
 * 5、分析模型训练过程中的训练集loss和验证集loss，需求最佳的泛化模型点。在chappter_05 根目录下运行命令：python analyze/loss_trainval.py  
   运行后显示 train & val loss分析结果，如下图:  
   ![sample_trainVal_Loss](https://github.com/XiangLiK/cv_course/raw/master/chapter_05/samples/trainVal_Loss.png)  
-* 6、模型测试，简化测试，同时获得模型的性能指标，注：（该项目以预测分类置信度最大的标签与真实标签（gt_label）比较的策略，获得模型精确率（Precision） 和 召回率（Recall），及所有类别的平均精确率和平均召回率，同时结果保存在 test_日期.json。）  
+* 6、模型测试，简化测试，同时获得模型的性能指标，注：（该项目以预测分类Top1为比较策略，获得模型精确率（Precision） 和 召回率（Recall），及所有类别的平均精确率和平均召回率，同时结果保存在 test_日期.json。）  
 * 7、图片的前向推断运行命令：python inference.py , 可视化结果举例，如下图所示。
 
 
